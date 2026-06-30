@@ -92,6 +92,11 @@ export async function POST() {
     )
     const listData = await listRes.json()
 
+    if (!listRes.ok) {
+      console.error('Gmail list API error:', listData)
+      return NextResponse.json({ error: `Gmail API error: ${listData.error?.message || listRes.status}` }, { status: 500 })
+    }
+
     if (!listData.messages) {
       return NextResponse.json({ synced: 0, message: 'No messages found' })
     }

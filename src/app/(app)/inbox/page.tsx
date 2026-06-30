@@ -66,13 +66,16 @@ export default function InboxPage() {
     try {
       const res = await fetch('/api/gmail/sync', { method: 'POST' })
       const data = await res.json()
+      console.log('Gmail sync response:', res.status, data)
       if (res.ok) {
+        alert(`Synced ${data.synced ?? 0} new email(s)`)
         await loadEmails()
       } else {
-        alert(data.error || 'Failed to sync Gmail')
+        alert('Sync failed: ' + (data.error || 'Unknown error'))
       }
-    } catch {
-      alert('Failed to sync Gmail')
+    } catch (err) {
+      console.error('Gmail sync error:', err)
+      alert('Failed to sync Gmail: ' + String(err))
     } finally {
       setSyncing(false)
     }
