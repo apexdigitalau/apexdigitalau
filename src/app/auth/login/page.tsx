@@ -25,13 +25,13 @@ export default function LoginPage() {
       setLoading(false)
     } else {
       router.push('/dashboard')
+      router.refresh()
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))] px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-9 h-9 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center">
             <Zap className="w-5 h-5 text-white fill-white" />
@@ -39,36 +39,31 @@ export default function LoginPage() {
           <span className="text-xl font-semibold text-[hsl(var(--foreground))]">Apex Digital</span>
         </div>
 
-        {/* Card */}
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-8 shadow-sm">
           <h1 className="text-xl font-semibold text-[hsl(var(--foreground))] mb-1">Sign in</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6">Access your CRM dashboard</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@apexdigital.au"
+                placeholder="you@apexdigitalau.com"
                 required
                 className="w-full px-3 py-2.5 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-transparent transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="********"
                   required
                   className="w-full px-3 py-2.5 pr-10 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-transparent transition-all"
                 />
@@ -83,8 +78,8 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-[hsl(var(--destructive)/0.1)] border border-[hsl(var(--destructive)/0.2)]">
-                <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
 
@@ -94,14 +89,10 @@ export default function LoginPage() {
               className="w-full py-2.5 px-4 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.9)] text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
         </div>
-
-        <p className="text-center text-xs text-[hsl(var(--muted-foreground))] mt-6">
-          Apex Digital AU · Internal CRM
-        </p>
       </div>
     </div>
   )
