@@ -38,29 +38,48 @@ export default function InboxPage() {
   const [tab, setTab] = useState<TabFilter>('all')
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/inbox')
-        if (res.ok) {
-          const data = await res.json()
-          const list = data.emails?.length ? data.emails : MOCK_EMAILS
-          setEmails(list)
-          if (list.length > 0) setSelected(list[0])
-        } else {
-          setEmails(MOCK_EMAILS)
-          setSelected(MOCK_EMAILS[0])
-        }
-      } catch {
+  async function loadEmails() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/inbox')
+      if (res.ok) {
+        const data = await res.json()
+        const list = data.emails?.length ? data.emails : MOCK_EMAILS
+        setEmails(list)
+        if (list.length > 0 && !selected) setSelected(list[0])
+      } else {
         setEmails(MOCK_EMAILS)
         setSelected(MOCK_EMAILS[0])
-      } finally {
-        setLoading(false)
       }
+    } catch {
+      setEmails(MOCK_EMAILS)
+      setSelected(MOCK_EMAILS[0])
+    } finally {
+      setLoading(false)
     }
-    load()
+  }
+
+  async function handleSyncGmail() {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/gmail/sync', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        await loadEmails()
+      } else {
+        alert(data.error || 'Failed to sync Gmail')
+      }
+    } catch {
+      alert('Failed to sync Gmail')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  useEffect(() => {
+    loadEmails()
   }, [])
 
   const tabCounts = {
@@ -101,8 +120,12 @@ export default function InboxPage() {
         title="Inbox"
         subtitle={`${tabCounts.unread} unread`}
         actions={
-          <button className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
-            <RefreshCw className="w-3.5 h-3.5" /> Sync Gmail
+          <button
+            onClick={handleSyncGmail}
+            disabled={syncing}
+            className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Syncing…' : 'Sync Gmail'}
           </button>
         }
       />
