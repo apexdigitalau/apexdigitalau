@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import {
   Mail, Key, Webhook, Building2, Signature, Clock, Users,
@@ -50,7 +50,31 @@ function MaskedInput({ value, placeholder }: { value: string; placeholder: strin
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("integrations");
-  const [gmailConnected] = useState(false);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailEmail, setGmailEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkGmailStatus() {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          setGmailConnected(!!data?.gmail_connected);
+          setGmailEmail(data?.gmail_email ?? null);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    checkGmailStatus();
+
+    // Show toast-style feedback from OAuth redirect
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmail_connected')) {
+      setGmailConnected(true);
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -98,12 +122,12 @@ export default function SettingsPage() {
                   </div>
                   {gmailConnected ? (
                     <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/15 px-2.5 py-1 rounded-full font-medium">
-                      <CheckCircle className="w-3.5 h-3.5" />Connected
+                      <CheckCircle className="w-3.5 h-3.5" />Connected{gmailEmail ? ` (${gmailEmail})` : ''}
                     </span>
                   ) : (
-                    <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90 font-medium">
+                    <a href="/api/auth/gmail" className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90 font-medium">
                       Connect Gmail
-                    </button>
+                    </a>
                   )}
                 </div>
                 {!gmailConnected && (
