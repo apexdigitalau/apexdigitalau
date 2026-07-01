@@ -124,10 +124,31 @@ export default function InboxPage() {
   async function handleSend() {
     if (!reply.trim() || !selected) return
     setSending(true)
-    await new Promise(r => setTimeout(r, 800))
-    setSending(false)
-    setReply('')
-    setEmails(prev => prev.map(e => e.id === selected.id ? { ...e, status: 'replied' } : e))
+    try {
+      const replySubject = selected.subject.startsWith('Re:') ? selected.subject : `Re: ${selected.subject}`
+      const res = await fetch('/api/gmail/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: selected.from_email,
+          subject: replySubject,
+          body: reply,
+          lead_id: selected.lead_id,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setReply('')
+        setEmails(prev => prev.map(e => e.id === selected.id ? { ...e, status: 'replied' } : e))
+        alert('Reply sent!')
+      } else {
+        alert('Failed to send: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to send reply: ' + String(err))
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
