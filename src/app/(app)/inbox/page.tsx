@@ -83,7 +83,19 @@ export default function InboxPage() {
   }
 
   useEffect(() => {
-    loadEmails()
+    // Auto-sync Gmail silently on page load, then load emails
+    async function initialLoad() {
+      setSyncing(true)
+      try {
+        await fetch('/api/gmail/sync', { method: 'POST' })
+      } catch {
+        // ignore sync errors on auto-load
+      } finally {
+        setSyncing(false)
+      }
+      await loadEmails()
+    }
+    initialLoad()
   }, [])
 
   const tabCounts = {
