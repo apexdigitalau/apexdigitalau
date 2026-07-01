@@ -46,16 +46,17 @@ export default function InboxPage() {
       const res = await fetch('/api/inbox')
       if (res.ok) {
         const data = await res.json()
-        const list = data.emails?.length ? data.emails : MOCK_EMAILS
+        const list = data.emails ?? []
         setEmails(list)
         if (list.length > 0 && !selected) setSelected(list[0])
+        else if (list.length === 0) setSelected(null)
       } else {
-        setEmails(MOCK_EMAILS)
-        setSelected(MOCK_EMAILS[0])
+        setEmails([])
+        setSelected(null)
       }
     } catch {
-      setEmails(MOCK_EMAILS)
-      setSelected(MOCK_EMAILS[0])
+      setEmails([])
+      setSelected(null)
     } finally {
       setLoading(false)
     }
