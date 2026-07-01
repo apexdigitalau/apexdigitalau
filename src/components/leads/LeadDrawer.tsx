@@ -76,11 +76,35 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
   }
 
   async function handleSendEmail() {
+    if (!lead!.email) {
+      alert('This lead has no email address')
+      return
+    }
     setSendingEmail(true)
-    await new Promise(r => setTimeout(r, 1000))
-    setSendingEmail(false)
-    setGeneratedEmail(null)
-    handleStatusChange('email_sent')
+    try {
+      const res = await fetch('/api/gmail/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: lead!.email,
+          subject: editedSubject,
+          body: editedBody,
+          lead_id: lead!.id,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setGeneratedEmail(null)
+        handleStatusChange('email_sent')
+        alert('Email sent to ' + lead!.email)
+      } else {
+        alert('Failed to send: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to send email: ' + String(err))
+    } finally {
+      setSendingEmail(false)
+    }
   }
 
   async function handleStatusChange(status: LeadStatus) {
