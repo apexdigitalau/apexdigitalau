@@ -51,6 +51,11 @@ export default function LeadsPage() {
   const [findLocation, setFindLocation] = useState('')
   const [findLimit, setFindLimit] = useState(20)
   const [findResult, setFindResult] = useState<{ found: number; inserted: number } | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [newLead, setNewLead] = useState({
+    company_name: '', industry: '', website: '', email: '', phone: '', address: '', contact_name: '', notes: '',
+  })
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Fetch leads from Supabase via API
@@ -165,6 +170,37 @@ export default function LeadsPage() {
     }
   }
 
+  async function handleAddLead() {
+    if (!newLead.company_name.trim()) {
+      alert('Company name is required')
+      return
+    }
+    setAdding(true)
+    try {
+      const payload: any = { status: 'new', date_added: new Date().toISOString() }
+      Object.entries(newLead).forEach(([k, v]) => {
+        payload[k] = v.trim() || null
+      })
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setAddOpen(false)
+        setNewLead({ company_name: '', industry: '', website: '', email: '', phone: '', address: '', contact_name: '', notes: '' })
+        fetchLeads()
+      } else {
+        alert('Failed to add lead: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to add lead: ' + String(err))
+    } finally {
+      setAdding(false)
+    }
+  }
+
   function handleLeadUpdate(updated: Lead) {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l))
     setSelectedLead(updated)
@@ -198,7 +234,7 @@ export default function LeadsPage() {
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               {importing ? 'Importing…' : 'Import CSV'}
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+            <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
               <Plus className="w-4 h-4" /> Add Lead
             </button>
           </div>
@@ -472,6 +508,66 @@ export default function LeadsPage() {
                 className="w-full py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {finding ? <><Loader2 className="w-4 h-4 animate-spin" /> Searching…</> : <><Search className="w-4 h-4" /> Find Leads</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Lead modal */}
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !adding && setAddOpen(false)}>
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[hsl(var(--border))]">
+              <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">Add New Lead</h2>
+              <button onClick={() => !adding && setAddOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Company name *</label>
+                <input type="text" value={newLead.company_name} onChange={e => setNewLead({ ...newLead, company_name: e.target.value })} placeholder="Acme Construction" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Industry</label>
+                  <input type="text" value={newLead.industry} onChange={e => setNewLead({ ...newLead, industry: e.target.value })} placeholder="Builder" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Contact name</label>
+                  <input type="text" value={newLead.contact_name} onChange={e => setNewLead({ ...newLead, contact_name: e.target.value })} placeholder="John Smith" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Website</label>
+                <input type="text" value={newLead.website} onChange={e => setNewLead({ ...newLead, website: e.target.value })} placeholder="https://example.com.au" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Email</label>
+                  <input type="email" value={newLead.email} onChange={e => setNewLead({ ...newLead, email: e.target.value })} placeholder="info@example.com" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Phone</label>
+                  <input type="text" value={newLead.phone} onChange={e => setNewLead({ ...newLead, phone: e.target.value })} placeholder="02 1234 5678" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Address</label>
+                <input type="text" value={newLead.address} onChange={e => setNewLead({ ...newLead, address: e.target.value })} placeholder="123 Main St, Sydney NSW" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Notes</label>
+                <textarea value={newLead.notes} onChange={e => setNewLead({ ...newLead, notes: e.target.value })} placeholder="Any notes about this lead…" rows={2} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] resize-none" />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-[hsl(var(--border))] flex gap-3">
+              <button onClick={() => setAddOpen(false)} disabled={adding} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={handleAddLead} disabled={adding || !newLead.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {adding ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><Plus className="w-4 h-4" /> Add Lead</>}
               </button>
             </div>
           </div>
