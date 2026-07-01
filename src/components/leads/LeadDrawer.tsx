@@ -36,6 +36,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
   const [copied, setCopied] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [currentStatus, setCurrentStatus] = useState<LeadStatus>(lead?.status || 'new')
+  const [analyzing, setAnalyzing] = useState(false)
 
   useEffect(() => {
     if (lead) {
@@ -104,6 +105,33 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
       alert('Failed to send email: ' + String(err))
     } finally {
       setSendingEmail(false)
+    }
+  }
+
+  async function handleAnalyzeWebsite() {
+    if (!lead!.website) {
+      alert('This lead has no website to analyze')
+      return
+    }
+    setAnalyzing(true)
+    try {
+      const res = await fetch('/api/website-analysis/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: lead!.id }),
+      })
+      const data = await res.json()
+      if (res.ok && data.analysis) {
+        const a = data.analysis
+        onUpdate({ ...lead!, website_score: a.overall_score } as Lead)
+        alert(`Analysis complete! Overall score: ${a.overall_score}/100\n\n${a.ai_summary}`)
+      } else {
+        alert('Analysis failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to analyze website: ' + String(err))
+    } finally {
+      setAnalyzing(false)
     }
   }
 
@@ -210,7 +238,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
           {/* OVERVIEW */}
           {tab === 'overview' && (
             <div className="space-y-6">
-              {lead.website_score != null && (
+              {lead.website_score != null ? (
                 <div className="p-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] flex items-center gap-4">
                   <ScoreRing score={score} size={64} strokeWidth={6} />
                   <div>
@@ -219,11 +247,33 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                       {score < 40 ? 'Poor — strong opportunity' : score < 60 ? 'Below average' : score < 80 ? 'Average' : 'Good'}
                     </p>
                   </div>
-                  <a href="/website-analysis" className="ml-auto text-xs text-[hsl(var(--primary))] hover:underline flex items-center gap-1">
-                    Analysis <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <div className="ml-auto flex flex-col items-end gap-1.5">
+                    <a href="/website-analysis" className="text-xs text-[hsl(var(--primary))] hover:underline flex items-center gap-1">
+                      Analysis <ExternalLink className="w-3 h-3" />
+                    </a>
+                    {lead.website && (
+                      <button onClick={handleAnalyzeWebsite} disabled={analyzing} className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] flex items-center gap-1 disabled:opacity-50">
+                        {analyzing ? 'Analyzing…' : 'Re-analyze'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
+              ) : lead.website ? (
+                <div className="p-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[hsl(var(--foreground))]">No website analysis yet</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">Run an AI analysis to score their site and get talking points.</p>
+                  </div>
+                  <button
+                    onClick={handleAnalyzeWebsite}
+                    disabled={analyzing}
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {analyzing ? 'Analyzing…' : 'Analyze Website'}
+                  </button>
+                </div>
+              ) : null}
 
               <div>
                 <h3 className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-3">Contact Details</h3>
