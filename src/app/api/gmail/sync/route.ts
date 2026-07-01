@@ -125,17 +125,34 @@ export async function POST() {
       const fromMatch = fromHeader.match(/^(.*?)\s*<(.+?)>$/)
       const fromName = fromMatch ? fromMatch[1].replace(/"/g, '').trim() : fromHeader
       const fromEmail = fromMatch ? fromMatch[2].trim() : fromHeader
+      const fromEmailLower = fromEmail.toLowerCase()
+      const fromDomain = fromEmailLower.split('@')[1] || ''
 
-      // Try to match to an existing lead by email
-      const { data: matchedLead } = await supabase
+      // Try to match to an existing lead — first by exact email (case-insensitive)
+      let matchedLeadId: string | null = null
+
+      const { data: emailMatch } = await supabase
         .from('leads')
         .select('id')
-        .eq('email', fromEmail)
+        .ilike('email', fromEmail)
         .limit(1)
-        .single()
+        .maybeSingle()
+
+      if (emailMatch) {
+        matchedLeadId = (emailMatch as any).id
+      } else if (fromDomain) {
+        // Fall back to matching by company website domain
+        const { data: domainMatch } = await supabase
+          .from('leads')
+          .select('id')
+          .ilike('website', `%${fromDomain}%`)
+          .limit(1)
+          .maybeSingle()
+        if (domainMatch) matchedLeadId = (domainMatch as any).id
+      }
 
       await supabase.from('emails').insert([{
-        lead_id: (matchedLead as any)?.id ?? null,
+        lead_id: matchedLeadId,
         direction: 'inbound',
         from_email: fromEmail,
         from_name: fromName || fromEmail,
