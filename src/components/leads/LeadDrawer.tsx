@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   X, Globe, Mail, Phone, MapPin, Star, Calendar, User, MessageSquare,
   Sparkles, Send, Clock, ExternalLink, ChevronDown, Loader2,
-  Building2, FileText, Copy, Check, Bell
+  Building2, FileText, Copy, Check, Bell, Pencil
 } from 'lucide-react'
 import { Lead, LeadStatus } from '@/types'
 import { StatusBadge } from '@/components/leads/StatusBadge'
@@ -37,6 +37,11 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
   const [statusOpen, setStatusOpen] = useState(false)
   const [currentStatus, setCurrentStatus] = useState<LeadStatus>(lead?.status || 'new')
   const [analyzing, setAnalyzing] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [editFields, setEditFields] = useState({
+    company_name: '', industry: '', website: '', email: '', phone: '', address: '', contact_name: '',
+  })
 
   useEffect(() => {
     if (lead) {
@@ -44,6 +49,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
       setGeneratedEmail(null)
       setNote('')
       setTab('overview')
+      setEditing(false)
     }
   }, [lead?.id])
 
@@ -105,6 +111,49 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
       alert('Failed to send email: ' + String(err))
     } finally {
       setSendingEmail(false)
+    }
+  }
+
+  function startEditing() {
+    setEditFields({
+      company_name: lead!.company_name || '',
+      industry: lead!.industry || '',
+      website: lead!.website || '',
+      email: lead!.email || '',
+      phone: lead!.phone || '',
+      address: lead!.address || '',
+      contact_name: lead!.contact_name || '',
+    })
+    setEditing(true)
+  }
+
+  async function saveEdit() {
+    if (!editFields.company_name.trim()) {
+      alert('Company name is required')
+      return
+    }
+    setSavingEdit(true)
+    try {
+      const payload: any = {}
+      Object.entries(editFields).forEach(([k, v]) => {
+        payload[k] = v.trim() || null
+      })
+      const res = await fetch(`/api/leads/${lead!.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        onUpdate({ ...lead!, ...payload } as Lead)
+        setEditing(false)
+      } else {
+        alert('Failed to save: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to save: ' + String(err))
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -213,6 +262,9 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                 </div>
               )}
             </div>
+            <button onClick={startEditing} className="p-2 rounded-lg hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors" title="Edit lead">
+              <Pencil className="w-4 h-4" />
+            </button>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -236,7 +288,54 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
         <div className="flex-1 overflow-y-auto p-6">
 
           {/* OVERVIEW */}
-          {tab === 'overview' && (
+          {tab === 'overview' && editing && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Edit Lead</h3>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Company name *</label>
+                <input type="text" value={editFields.company_name} onChange={e => setEditFields({ ...editFields, company_name: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Industry</label>
+                  <input type="text" value={editFields.industry} onChange={e => setEditFields({ ...editFields, industry: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Contact name</label>
+                  <input type="text" value={editFields.contact_name} onChange={e => setEditFields({ ...editFields, contact_name: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Website</label>
+                <input type="text" value={editFields.website} onChange={e => setEditFields({ ...editFields, website: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Email</label>
+                  <input type="email" value={editFields.email} onChange={e => setEditFields({ ...editFields, email: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Phone</label>
+                  <input type="text" value={editFields.phone} onChange={e => setEditFields({ ...editFields, phone: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))] mb-1">Address</label>
+                <input type="text" value={editFields.address} onChange={e => setEditFields({ ...editFields, address: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setEditing(false)} disabled={savingEdit} className="flex-1 py-2 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
+                <button onClick={saveEdit} disabled={savingEdit || !editFields.company_name.trim()} className="flex-1 py-2 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                  {savingEdit ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Save</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* OVERVIEW */}
+          {tab === 'overview' && !editing && (
             <div className="space-y-6">
               {lead.website_score != null ? (
                 <div className="p-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] flex items-center gap-4">

@@ -12,7 +12,7 @@ export async function PATCH(
     const allowedFields = [
       'status', 'notes', 'follow_up_date', 'last_contacted',
       'assigned_user', 'contact_name', 'email', 'phone', 'address',
-      'google_rating', 'website_score'
+      'google_rating', 'website_score', 'company_name', 'industry', 'website'
     ]
 
     const updates: Record<string, unknown> = {}
