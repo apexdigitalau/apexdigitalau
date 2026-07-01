@@ -68,7 +68,7 @@ export default function InboxPage() {
       const data = await res.json()
       console.log('Gmail sync response:', res.status, data)
       if (res.ok) {
-        alert(`Synced ${data.synced ?? 0} new email(s)`)
+        alert(`Synced ${data.synced ?? 0} new · removed ${data.deleted ?? 0} deleted`)
         await loadEmails()
       } else {
         alert('Sync failed: ' + (data.error || 'Unknown error'))

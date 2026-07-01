@@ -87,7 +87,7 @@ export async function POST() {
 
     // Fetch recent message list
     const listRes = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25&q=in:inbox',
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&q=in:inbox',
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
     const listData = await listRes.json()
@@ -152,7 +152,30 @@ export async function POST() {
       syncedCount++
     }
 
-    return NextResponse.json({ synced: syncedCount })
+    // CLEANUP: remove inbound emails from DB that no longer exist in Gmail inbox
+    const gmailIds = new Set(listData.messages.map((m: any) => m.id))
+
+    // Get all inbound emails we have stored with a gmail_message_id
+    const { data: storedInbound } = await supabase
+      .from('emails')
+      .select('id, gmail_message_id')
+      .eq('direction', 'inbound')
+      .not('gmail_message_id', 'is', null)
+
+    let deletedCount = 0
+    const idsToDelete = (storedInbound ?? [])
+      .filter((e: any) => e.gmail_message_id && !gmailIds.has(e.gmail_message_id))
+      .map((e: any) => e.id)
+
+    if (idsToDelete.length > 0) {
+      const { error: delError } = await supabase
+        .from('emails')
+        .delete()
+        .in('id', idsToDelete)
+      if (!delError) deletedCount = idsToDelete.length
+    }
+
+    return NextResponse.json({ synced: syncedCount, deleted: deletedCount })
   } catch (err) {
     console.error('Gmail sync error:', err)
     return NextResponse.json({ error: 'Server error during sync' }, { status: 500 })
