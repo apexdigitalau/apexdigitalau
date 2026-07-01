@@ -97,9 +97,7 @@ export async function POST() {
       return NextResponse.json({ error: `Gmail API error: ${listData.error?.message || listRes.status}` }, { status: 500 })
     }
 
-    if (!listData.messages) {
-      return NextResponse.json({ synced: 0, message: 'No messages found' })
-    }
+    const messages = listData.messages || []
 
     // Get existing gmail_message_ids to avoid duplicates
     const { data: existingEmails } = await supabase
@@ -110,7 +108,7 @@ export async function POST() {
 
     let syncedCount = 0
 
-    for (const msgRef of listData.messages) {
+    for (const msgRef of messages) {
       if (existingIds.has(msgRef.id)) continue
 
       const msgRes = await fetch(
@@ -153,7 +151,7 @@ export async function POST() {
     }
 
     // CLEANUP: remove inbound emails from DB that no longer exist in Gmail inbox
-    const gmailIds = new Set(listData.messages.map((m: any) => m.id))
+    const gmailIds = new Set(messages.map((m: any) => m.id))
 
     // Get all inbound emails we have stored with a gmail_message_id
     const { data: storedInbound } = await supabase
