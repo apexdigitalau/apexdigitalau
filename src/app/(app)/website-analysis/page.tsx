@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar'
 import { ScoreRing } from '@/components/common/ScoreRing'
 import {
   Globe, Sparkles, Mail, ChevronDown, ChevronUp, Loader2,
-  AlertTriangle, CheckCircle, TrendingUp, RefreshCw, Search
+  AlertTriangle, CheckCircle, TrendingUp, RefreshCw, Search, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -183,25 +183,66 @@ export default function WebsiteAnalysisPage() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [leads, setLeads] = useState<any[]>([])
+  const [leadSearch, setLeadSearch] = useState('')
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+
+  async function loadAnalyses() {
+    try {
+      const res = await fetch('/api/website-analysis')
+      if (res.ok) {
+        const data = await res.json()
+        setAnalyses(data.analyses ?? [])
+      } else {
+        setAnalyses([])
+      }
+    } catch {
+      setAnalyses([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function openPicker() {
+    setPickerOpen(true)
+    try {
+      const res = await fetch('/api/leads')
+      if (res.ok) {
+        const data = await res.json()
+        const withSites = (data.leads ?? []).filter((l: any) => l.website)
+        setLeads(withSites)
+      }
+    } catch {
+      setLeads([])
+    }
+  }
+
+  async function analyzeLeadFromPicker(leadId: string) {
+    setAnalyzingId(leadId)
+    try {
+      const res = await fetch('/api/website-analysis/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: leadId }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await loadAnalyses()
+        setPickerOpen(false)
+        setLeadSearch('')
+      } else {
+        alert('Analysis failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to analyze: ' + String(err))
+    } finally {
+      setAnalyzingId(null)
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/website-analysis')
-        if (res.ok) {
-          const data = await res.json()
-          setAnalyses(data.analyses?.length ? data.analyses : MOCK_ANALYSES)
-        } else {
-          setAnalyses(MOCK_ANALYSES)
-        }
-      } catch {
-        setAnalyses(MOCK_ANALYSES)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
+    loadAnalyses()
   }, [])
 
   const filtered = analyses.filter(a =>
@@ -222,7 +263,7 @@ export default function WebsiteAnalysisPage() {
         title="Website Analysis"
         subtitle={`${analyses.length} analysed`}
         actions={
-          <button className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+          <button onClick={openPicker} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
             <Globe className="w-4 h-4" /> Analyse New Site
           </button>
         }
@@ -287,6 +328,60 @@ export default function WebsiteAnalysisPage() {
           </div>
         )}
       </div>
+
+      {/* Lead picker modal for analysing a new site */}
+      {pickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !analyzingId && setPickerOpen(false)}>
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl w-full max-w-lg shadow-xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[hsl(var(--border))]">
+              <div>
+                <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">Analyse a Website</h2>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">Pick a lead with a website to run an AI analysis</p>
+              </div>
+              <button onClick={() => !analyzingId && setPickerOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-[hsl(var(--border))]">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+                <input
+                  type="text"
+                  value={leadSearch}
+                  onChange={e => setLeadSearch(e.target.value)}
+                  placeholder="Search leads…"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-2">
+              {leads.length === 0 ? (
+                <p className="text-sm text-[hsl(var(--muted-foreground))] text-center py-8">No leads with websites found. Add leads first.</p>
+              ) : (
+                leads
+                  .filter(l => !leadSearch || l.company_name?.toLowerCase().includes(leadSearch.toLowerCase()))
+                  .map(l => (
+                    <div key={l.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-[hsl(var(--accent))] transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{l.company_name}</p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">{l.website}</p>
+                      </div>
+                      <button
+                        onClick={() => analyzeLeadFromPicker(l.id)}
+                        disabled={analyzingId !== null}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {analyzingId === l.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analysing…</> : <><Sparkles className="w-3.5 h-3.5" /> Analyse</>}
+                      </button>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
