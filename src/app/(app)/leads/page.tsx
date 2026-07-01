@@ -45,6 +45,12 @@ export default function LeadsPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<{ inserted: number; skipped: number } | null>(null)
+  const [findOpen, setFindOpen] = useState(false)
+  const [finding, setFinding] = useState(false)
+  const [findIndustry, setFindIndustry] = useState('')
+  const [findLocation, setFindLocation] = useState('')
+  const [findLimit, setFindLimit] = useState(20)
+  const [findResult, setFindResult] = useState<{ found: number; inserted: number } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Fetch leads from Supabase via API
@@ -135,6 +141,30 @@ export default function LeadsPage() {
     }
   }
 
+  async function handleFindLeads() {
+    if (!findIndustry.trim() || !findLocation.trim()) return
+    setFinding(true)
+    setFindResult(null)
+    try {
+      const res = await fetch('/api/leads/find', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ industry: findIndustry, location: findLocation, limit: findLimit }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setFindResult({ found: data.found, inserted: data.inserted })
+        fetchLeads()
+      } else {
+        alert('Find failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to find leads: ' + String(err))
+    } finally {
+      setFinding(false)
+    }
+  }
+
   function handleLeadUpdate(updated: Lead) {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l))
     setSelectedLead(updated)
@@ -154,6 +184,12 @@ export default function LeadsPage() {
         actions={
           <div className="flex items-center gap-2">
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+            <button
+              onClick={() => { setFindOpen(true); setFindResult(null) }}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors"
+            >
+              <Search className="w-4 h-4" /> Find Leads
+            </button>
             <button
               onClick={() => fileRef.current?.click()}
               disabled={importing}
@@ -375,6 +411,71 @@ export default function LeadsPage() {
           onClose={() => setSelectedLead(null)}
           onUpdate={handleLeadUpdate}
         />
+      )}
+
+      {/* Find Leads modal */}
+      {findOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !finding && setFindOpen(false)}>
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">Find Leads from Google</h2>
+              <button onClick={() => !finding && setFindOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">Industry / Business type</label>
+                <input
+                  type="text"
+                  value={findIndustry}
+                  onChange={e => setFindIndustry(e.target.value)}
+                  placeholder="e.g. plumbers, cafes, electricians"
+                  className="w-full px-3 py-2.5 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">Location</label>
+                <input
+                  type="text"
+                  value={findLocation}
+                  onChange={e => setFindLocation(e.target.value)}
+                  placeholder="e.g. Sydney NSW, Melbourne"
+                  className="w-full px-3 py-2.5 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">How many leads</label>
+                <select
+                  value={findLimit}
+                  onChange={e => setFindLimit(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                >
+                  <option value={20}>20 leads</option>
+                  <option value={40}>40 leads</option>
+                  <option value={60}>60 leads</option>
+                </select>
+              </div>
+
+              {findResult && (
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-sm text-emerald-400">Found {findResult.found} · added {findResult.inserted} new leads</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleFindLeads}
+                disabled={finding || !findIndustry.trim() || !findLocation.trim()}
+                className="w-full py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {finding ? <><Loader2 className="w-4 h-4 animate-spin" /> Searching…</> : <><Search className="w-4 h-4" /> Find Leads</>}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
