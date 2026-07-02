@@ -19,6 +19,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  BookOpen,
 } from "lucide-react";
 import { useTheme } from "@/components/common/ThemeProvider";
 
@@ -45,6 +46,7 @@ const navigation = [
   { name: "Website Analysis", href: "/website-analysis", icon: Globe },
   { name: "Clients", href: "/clients", icon: Briefcase },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Deploy Guide", href: "/deploy-guide", icon: BookOpen },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
