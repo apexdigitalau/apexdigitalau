@@ -77,13 +77,29 @@ ${analysis ? `**Website Analysis Results:**
 - Top Issues: ${(analysis.issues || []).slice(0, 3).join(', ')}
 - Estimated conversion increase if fixed: +${analysis.estimated_conversion_increase}%` : ''}
 
-Requirements:
-- Subject line that creates curiosity (not clickbait)
-- 3-4 short paragraphs maximum
-- Reference specific issues found on their website
-- Include a clear, low-friction CTA (short call, not "buy now")
-- Conversational Australian English tone
-- Do NOT use generic phrases like "I hope this email finds you well"
+Requirements — follow these cold email best practices strictly:
+
+SUBJECT LINE:
+- 2-5 words, specific to THEM (e.g. their business name or their website issue)
+- Lowercase or sentence case feels personal; avoid Title Case and clickbait
+- No spam trigger words: free, guarantee, limited time, act now, deal
+
+OPENING LINE:
+- Start with a specific, genuine observation about THEIR business or website (never about us)
+- NEVER open with "I hope this email finds you well", "My name is", or "I'm reaching out"
+
+BODY:
+- Under 120 words total. Short sentences. 2-3 short paragraphs.
+- Focus on ONE specific problem from their website analysis and the business cost of it (lost calls, lost jobs, customers choosing competitors)
+- Write at a 5th-grade reading level, conversational Australian English
+- Sell the conversation, not the service — no feature lists, no pricing
+- No exaggerated claims, no excessive punctuation, no ALL CAPS
+
+CTA:
+- One soft, interest-based question to close (e.g. "Worth a quick look?" or "Open to seeing what I found?")
+- Do NOT ask for a meeting/call in the first email
+
+SIGN-OFF:
 - Sign off from ${BRAND.companyFullName}
 
 Return ONLY valid JSON with this exact format (no markdown, no backticks):
