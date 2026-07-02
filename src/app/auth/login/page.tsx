@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import { BRAND } from '@/lib/brand'
 import { Zap, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -36,7 +37,7 @@ export default function LoginPage() {
           <div className="w-9 h-9 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center">
             <Zap className="w-5 h-5 text-white fill-white" />
           </div>
-          <span className="text-xl font-semibold text-[hsl(var(--foreground))]">Apex Digital</span>
+          <span className="text-xl font-semibold text-[hsl(var(--foreground))]">{BRAND.companyName}</span>
         </div>
 
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-8 shadow-sm">
@@ -50,7 +51,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@apexdigitalau.com"
+                placeholder={BRAND.loginEmailPlaceholder}
                 required
                 className="w-full px-3 py-2.5 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-transparent transition-all"
               />

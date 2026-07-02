@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { BRAND } from '@/lib/brand'
 
 interface WebsiteAnalysis {
   overall_score: number
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   const analysis = lead.website_analyses?.[0]
-  const systemPrompt = (settings as any)?.default_prompt || 'You are a professional cold email writer for a web design agency called Apex Digital AU.'
+  const systemPrompt = (settings as any)?.default_prompt || `You are a professional cold email writer for a ${BRAND.agencyType} called ${BRAND.companyFullName}.`
 
   const userPrompt = `
 Write a personalised cold email for this lead:
@@ -83,7 +84,7 @@ Requirements:
 - Include a clear, low-friction CTA (short call, not "buy now")
 - Conversational Australian English tone
 - Do NOT use generic phrases like "I hope this email finds you well"
-- Sign off from Apex Digital AU
+- Sign off from ${BRAND.companyFullName}
 
 Return ONLY valid JSON with this exact format (no markdown, no backticks):
 {"subject": "...", "body": "..."}`

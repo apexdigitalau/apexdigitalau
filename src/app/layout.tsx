@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ToastProvider } from '@/components/common/Toast'
+import { BRAND } from '@/lib/brand'
 
 export const metadata: Metadata = {
-  title: 'Apex Digital AU — CRM',
-  description: 'The central operating system for Apex Digital AU',
+  title: BRAND.pageTitle,
+  description: BRAND.tagline,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

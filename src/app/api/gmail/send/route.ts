@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { BRAND } from '@/lib/brand'
 
 async function refreshAccessToken(refreshToken: string) {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       lead_id: lead_id || null,
       direction: 'outbound',
       from_email: fromEmail,
-      from_name: 'Apex Digital',
+      from_name: BRAND.emailSenderName,
       to_email: to,
       subject: finalSubject,
       body,

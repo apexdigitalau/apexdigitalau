@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 import {
   LayoutDashboard,
   Users,
@@ -43,7 +44,7 @@ export function Sidebar() {
           <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-[hsl(var(--foreground))] leading-none">Apex Digital</p>
+          <p className="text-sm font-semibold text-[hsl(var(--foreground))] leading-none">{BRAND.companyName}</p>
           <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">CRM Platform</p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { BRAND } from '@/lib/brand'
 
 function stripHtml(html: string): string {
   // Remove scripts and styles
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     let fetchFailed = false
     try {
       const siteRes = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ApexCRM/1.0)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CRMAnalyzer/1.0)' },
         signal: AbortSignal.timeout(15000),
       })
       html = await siteRes.text()
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     const hasHttps = url.startsWith('https://')
     const htmlLength = html.length
 
-    const systemPrompt = 'You are a web design and conversion expert analyzing small business websites for Apex Digital AU, a web design agency. You provide honest, specific, actionable analysis that can be used as sales talking points. Always respond with valid JSON only, no markdown.'
+    const systemPrompt = `You are a web design and conversion expert analyzing small business websites for ${BRAND.companyFullName}, a ${BRAND.agencyType}. You provide honest, specific, actionable analysis that can be used as sales talking points. Always respond with valid JSON only, no markdown.`
 
     const userPrompt = `Analyze this business website for a web design sales pitch.
 

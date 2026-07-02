@@ -7,6 +7,7 @@ import {
   CheckCircle, AlertCircle, Eye, EyeOff, Save, Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/brand";
 
 const SECTIONS = [
   { id: "integrations", label: "Integrations" },
@@ -197,7 +198,7 @@ export default function SettingsPage() {
                   <SettingRow label="Default Email Prompt" description="Base context sent to AI when generating emails">
                     <textarea
                       rows={5}
-                      defaultValue="You are a professional cold email writer for Apex Digital AU, a web design agency based in Australia. Write personalised, concise emails that highlight the specific problems with the prospect's website and how we can help improve their online presence and conversions."
+                      defaultValue={`You are a professional cold email writer for ${BRAND.companyFullName}, a ${BRAND.agencyType}. Write personalised, concise emails that highlight the specific problems with the prospect's website and how we can help improve their online presence and conversions.`}
                       className="w-full px-3 py-2 text-xs bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))] resize-none"
                     />
                   </SettingRow>
@@ -213,7 +214,7 @@ export default function SettingsPage() {
               </div>
               <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-5 divide-y divide-[hsl(var(--border))]">
                 <SettingRow label="Company Name">
-                  <input defaultValue="Apex Digital AU" className="w-full px-3 py-2 text-sm bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))]" />
+                  <input defaultValue={BRAND.companyFullName} className="w-full px-3 py-2 text-sm bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))]" />
                 </SettingRow>
                 <SettingRow label="Business Hours">
                   <div className="flex items-center gap-2">
