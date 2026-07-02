@@ -17,7 +17,23 @@ import {
   ChevronDown,
   Zap,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/components/common/ThemeProvider";
+
+function ThemeToggleButton() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-[hsl(var(--accent))] transition-colors text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+    >
+      {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
+      <span className="text-xs font-medium">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+    </button>
+  );
+}
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -90,8 +106,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User */}
-      <div className="p-3 border-t border-[hsl(var(--border))]">
+      {/* Theme toggle + User */}
+      <div className="p-3 border-t border-[hsl(var(--border))] space-y-1">
+        <ThemeToggleButton />
         <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-[hsl(var(--accent))] transition-colors group">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
             A

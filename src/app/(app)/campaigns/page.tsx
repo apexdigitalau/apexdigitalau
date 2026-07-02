@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { TopBar } from '@/components/layout/TopBar'
 import {
   Plus, Mail, Send, Clock, CheckCircle, PauseCircle, FileEdit,
-  TrendingUp, Eye, MessageSquare, AlertCircle, Loader2, BarChart2
+  TrendingUp, Eye, MessageSquare, AlertCircle, Loader2, BarChart2, X
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 
@@ -55,25 +55,60 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Campaign['status'] | 'all'>('all')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newCampaign, setNewCampaign] = useState({ name: '', subject: '', industry: '' })
+
+  async function loadCampaigns() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/campaigns')
+      if (res.ok) {
+        const data = await res.json()
+        setCampaigns(data.campaigns ?? [])
+      } else {
+        setCampaigns([])
+      }
+    } catch {
+      setCampaigns([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleCreateCampaign() {
+    if (!newCampaign.name.trim()) {
+      alert('Campaign name is required')
+      return
+    }
+    setCreating(true)
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCampaign.name.trim(),
+          subject: newCampaign.subject.trim() || null,
+          industry: newCampaign.industry.trim() || null,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setCreateOpen(false)
+        setNewCampaign({ name: '', subject: '', industry: '' })
+        loadCampaigns()
+      } else {
+        alert('Failed to create campaign: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to create campaign: ' + String(err))
+    } finally {
+      setCreating(false)
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/campaigns')
-        if (res.ok) {
-          const data = await res.json()
-          setCampaigns(data.campaigns?.length ? data.campaigns : MOCK)
-        } else {
-          setCampaigns(MOCK)
-        }
-      } catch {
-        setCampaigns(MOCK)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
+    loadCampaigns()
   }, [])
 
   const filtered = filter === 'all' ? campaigns : campaigns.filter(c => c.status === filter)
@@ -91,7 +126,7 @@ export default function CampaignsPage() {
         title="Campaigns"
         subtitle={`${campaigns.length} campaigns`}
         actions={
-          <button className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+          <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
             <Plus className="w-4 h-4" /> New Campaign
           </button>
         }
@@ -228,6 +263,42 @@ export default function CampaignsPage() {
           </div>
         )}
       </div>
+
+      {/* New Campaign modal */}
+      {createOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !creating && setCreateOpen(false)}>
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[hsl(var(--border))]">
+              <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">New Campaign</h2>
+              <button onClick={() => !creating && setCreateOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Campaign name *</label>
+                <input type="text" value={newCampaign.name} onChange={e => setNewCampaign({ ...newCampaign, name: e.target.value })} placeholder="Sydney Builders — March outreach" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Email subject</label>
+                <input type="text" value={newCampaign.subject} onChange={e => setNewCampaign({ ...newCampaign, subject: e.target.value })} placeholder="Quick question about your website" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Target industry</label>
+                <input type="text" value={newCampaign.industry} onChange={e => setNewCampaign({ ...newCampaign, industry: e.target.value })} placeholder="Builders" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-[hsl(var(--border))] flex gap-3">
+              <button onClick={() => setCreateOpen(false)} disabled={creating} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={handleCreateCampaign} disabled={creating || !newCampaign.name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Plus className="w-4 h-4" /> Create</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

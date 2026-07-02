@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar'
 import {
   Plus, Globe, Mail, Phone, DollarSign, Calendar,
   CheckCircle, Clock, PauseCircle, XCircle, Loader2,
-  Building2, Search, FileText
+  Building2, Search, FileText, X
 } from 'lucide-react'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
@@ -43,25 +43,69 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Client['project_status'] | 'all'>('all')
+  const [addOpen, setAddOpen] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [newClient, setNewClient] = useState({
+    company_name: '', contact_name: '', email: '', phone: '', website: '',
+    project_status: 'active', project_value: '', notes: '',
+  })
+
+  async function loadClients() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/clients')
+      if (res.ok) {
+        const data = await res.json()
+        setClients(data.clients ?? [])
+      } else {
+        setClients([])
+      }
+    } catch {
+      setClients([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleAddClient() {
+    if (!newClient.company_name.trim()) {
+      alert('Company name is required')
+      return
+    }
+    setAdding(true)
+    try {
+      const payload: any = {
+        company_name: newClient.company_name.trim(),
+        contact_name: newClient.contact_name.trim() || null,
+        email: newClient.email.trim() || null,
+        phone: newClient.phone.trim() || null,
+        website: newClient.website.trim() || null,
+        project_status: newClient.project_status,
+        project_value: newClient.project_value ? parseFloat(newClient.project_value) : null,
+        notes: newClient.notes.trim() || null,
+      }
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setAddOpen(false)
+        setNewClient({ company_name: '', contact_name: '', email: '', phone: '', website: '', project_status: 'active', project_value: '', notes: '' })
+        loadClients()
+      } else {
+        alert('Failed to add client: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to add client: ' + String(err))
+    } finally {
+      setAdding(false)
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/clients')
-        if (res.ok) {
-          const data = await res.json()
-          setClients(data.clients?.length ? data.clients : MOCK_CLIENTS)
-        } else {
-          setClients(MOCK_CLIENTS)
-        }
-      } catch {
-        setClients(MOCK_CLIENTS)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
+    loadClients()
   }, [])
 
   const filtered = clients.filter(c => {
@@ -84,7 +128,7 @@ export default function ClientsPage() {
         title="Clients"
         subtitle={`${clients.length} total · ${activeCount} active`}
         actions={
-          <button className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+          <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
             <Plus className="w-4 h-4" /> Add Client
           </button>
         }
@@ -224,6 +268,73 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
+
+      {/* Add Client modal */}
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !adding && setAddOpen(false)}>
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[hsl(var(--border))]">
+              <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">Add New Client</h2>
+              <button onClick={() => !adding && setAddOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Company name *</label>
+                <input type="text" value={newClient.company_name} onChange={e => setNewClient({ ...newClient, company_name: e.target.value })} placeholder="Acme Construction" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Contact name</label>
+                  <input type="text" value={newClient.contact_name} onChange={e => setNewClient({ ...newClient, contact_name: e.target.value })} placeholder="John Smith" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Project status</label>
+                  <select value={newClient.project_status} onChange={e => setNewClient({ ...newClient, project_status: e.target.value })} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]">
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="paused">Paused</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Email</label>
+                  <input type="email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} placeholder="info@example.com" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Phone</label>
+                  <input type="text" value={newClient.phone} onChange={e => setNewClient({ ...newClient, phone: e.target.value })} placeholder="02 1234 5678" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Website</label>
+                  <input type="text" value={newClient.website} onChange={e => setNewClient({ ...newClient, website: e.target.value })} placeholder="https://example.com.au" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Project value ($)</label>
+                  <input type="number" value={newClient.project_value} onChange={e => setNewClient({ ...newClient, project_value: e.target.value })} placeholder="5000" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Notes</label>
+                <textarea value={newClient.notes} onChange={e => setNewClient({ ...newClient, notes: e.target.value })} placeholder="Project details, scope, etc…" rows={2} className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] resize-none" />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-[hsl(var(--border))] flex gap-3">
+              <button onClick={() => setAddOpen(false)} disabled={adding} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={handleAddClient} disabled={adding || !newClient.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {adding ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><Plus className="w-4 h-4" /> Add Client</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
