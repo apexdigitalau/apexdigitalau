@@ -7,6 +7,18 @@ import { BRAND } from '@/lib/brand'
 export const metadata: Metadata = {
   title: BRAND.pageTitle,
   description: BRAND.tagline,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: BRAND.companyName,
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+}
+
+export const viewport = {
+  themeColor: '#181A20',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

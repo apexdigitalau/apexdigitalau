@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* KPI row */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {[
             { label: "Total Revenue", value: formatCurrency(totalRevenue), sub: "7-month total", color: "text-[hsl(var(--primary))]" },
             { label: "Websites Sold", value: totalSales.toString(), sub: "avg deal: " + formatCurrency(totalRevenue / totalSales), color: "text-emerald-400" },

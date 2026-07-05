@@ -119,9 +119,9 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
           <StatCard
             title="Leads Today"
             value={stats?.leads_today ?? 0}
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Rate Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
             <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2">Reply Rate</p>
             <div className="flex items-end gap-2">
@@ -205,9 +205,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
           {/* Email Chart */}
-          <div className="col-span-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
+          <div className="lg:col-span-3 min-w-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Email Activity</h3>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Revenue Chart */}
-          <div className="col-span-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
+          <div className="lg:col-span-2 min-w-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Revenue</h3>
@@ -261,9 +261,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Activity */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
           {/* Recent Leads */}
-          <div className="col-span-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
+          <div className="lg:col-span-3 min-w-0 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Recent Leads</h3>
               <Link href="/leads" className="flex items-center gap-1 text-xs text-[hsl(var(--primary))] hover:underline">
@@ -295,7 +295,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Stats / Widgets */}
-          <div className="col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3 md:space-y-4">
             {/* Websites Sold */}
             <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
               <p className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2">Websites Sold</p>

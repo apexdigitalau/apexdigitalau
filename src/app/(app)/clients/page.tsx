@@ -136,7 +136,7 @@ export default function ClientsPage() {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           {[
             { label: 'Active Projects', value: activeCount, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
             { label: 'Total Clients', value: clients.length, icon: Building2, color: 'text-[hsl(var(--primary))]', bg: 'bg-[hsl(var(--primary)/0.1)]' },

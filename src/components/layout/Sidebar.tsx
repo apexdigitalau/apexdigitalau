@@ -12,16 +12,18 @@ import {
   Briefcase,
   BarChart3,
   Settings,
-  Bell,
   Search,
   ChevronDown,
   Zap,
-  LogOut,
   Sun,
   Moon,
   BookOpen,
+  X,
 } from "lucide-react";
 import { useTheme } from "@/components/common/ThemeProvider";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { useSidebar } from "@/components/layout/AppShell";
 
 function ThemeToggleButton() {
   const { theme, toggleTheme } = useTheme();
@@ -35,8 +37,6 @@ function ThemeToggleButton() {
     </button>
   );
 }
-import { cn } from "@/lib/utils";
-import { useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -50,12 +50,12 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [notifCount] = useState(3);
 
   return (
-    <aside className="flex flex-col w-60 h-screen bg-[hsl(var(--card))] border-r border-[hsl(var(--border))] shrink-0">
+    <>
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[hsl(var(--border))]">
         <div className="w-7 h-7 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center">
@@ -86,6 +86,7 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-150",
                 active
@@ -122,6 +123,54 @@ export function Sidebar() {
           <ChevronDown className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))] shrink-0" />
         </button>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const { open, setOpen } = useSidebar();
+  const pathname = usePathname();
+
+  // Close the mobile drawer whenever the route changes
+  useEffect(() => {
+    setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  return (
+    <>
+      {/* Desktop sidebar - unchanged, hidden below lg */}
+      <aside className="hidden lg:flex flex-col w-60 h-screen bg-[hsl(var(--card))] border-r border-[hsl(var(--border))] shrink-0">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile backdrop */}
+      {open && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile slide-out drawer */}
+      <aside
+        className={cn(
+          "lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col",
+          "bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]",
+          "transform transition-transform duration-200 ease-out",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]"
+          aria-label="Close menu"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <SidebarContent onNavigate={() => setOpen(false)} />
+      </aside>
+    </>
   );
 }
