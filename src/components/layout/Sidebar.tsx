@@ -18,6 +18,7 @@ import {
   Sun,
   Moon,
   BookOpen,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useTheme } from "@/components/common/ThemeProvider";
@@ -40,6 +41,7 @@ function ThemeToggleButton() {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "AI Assistant", href: "/assistant", icon: Sparkles },
   { name: "Leads", href: "/leads", icon: Users },
   { name: "Campaigns", href: "/campaigns", icon: Mail },
   { name: "Inbox", href: "/inbox", icon: Inbox },

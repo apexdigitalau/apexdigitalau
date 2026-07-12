@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     let query = getSupabaseAdmin()
       .from('emails')
       .select('*, leads(company_name, status)')
+      .neq('status', 'draft')
       .order('created_at', { ascending: false })
       .limit(100)
 
