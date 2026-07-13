@@ -29,6 +29,19 @@ function parseJson(text: string) {
   return JSON.parse(text.replace(/```json|```/g, '').trim())
 }
 
+// Lead statuses that mean outreach has already happened — never draft for these,
+// even if no outbound email row exists (e.g. contact was made outside the CRM).
+const ALREADY_CONTACTED_STATUSES = new Set([
+  'email_sent', 'replied', 'meeting_booked', 'proposal_sent', 'won', 'lost',
+])
+
+function skipSummary(contacted: number, drafted: number): string {
+  const parts: string[] = []
+  if (contacted > 0) parts.push(`${contacted} already contacted`)
+  if (drafted > 0) parts.push(`${drafted} with drafts waiting`)
+  return parts.length ? ` Skipped ${parts.join(' and ')}.` : ''
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { instruction } = await request.json()
@@ -67,7 +80,7 @@ If the instruction is not about drafting/writing emails to leads, set action to 
     const supabase = getSupabaseAdmin()
     let query = supabase
       .from('leads')
-      .select('id, company_name, industry, website, email, address, google_rating')
+      .select('id, company_name, industry, website, email, address, google_rating, status')
       .limit(count * 3)
 
     if (keyword) {
@@ -86,9 +99,57 @@ If the instruction is not about drafting/writing emails to leads, set action to 
       })
     }
 
+    // STEP 2.2 — never draft for a company we've already contacted or queued.
+    // Done before the email scraping below so we don't burn time on leads we'll skip.
+    const { data: outbound, error: outboundErr } = await supabase
+      .from('emails')
+      .select('lead_id, status')
+      .eq('direction', 'outbound')
+      .in('lead_id', allLeads.map((l: any) => l.id))
+
+    if (outboundErr) {
+      return NextResponse.json({ error: outboundErr.message }, { status: 500 })
+    }
+
+    const sentLeadIds = new Set<string>()
+    const draftedLeadIds = new Set<string>()
+    for (const email of outbound ?? []) {
+      if (!email.lead_id) continue
+      if (email.status === 'draft') draftedLeadIds.add(String(email.lead_id))
+      else sentLeadIds.add(String(email.lead_id))
+    }
+
+    let skippedContacted = 0
+    let skippedDrafted = 0
+    const eligibleLeads = allLeads.filter((lead: any) => {
+      const id = String(lead.id)
+      // A sent email (or a contacted status) outranks a pending draft, so a lead
+      // with both is only counted once.
+      if (sentLeadIds.has(id) || ALREADY_CONTACTED_STATUSES.has(lead.status)) {
+        skippedContacted++
+        return false
+      }
+      if (draftedLeadIds.has(id)) {
+        skippedDrafted++
+        return false
+      }
+      return true
+    })
+
+    const skipped = skipSummary(skippedContacted, skippedDrafted)
+
+    if (eligibleLeads.length === 0) {
+      return NextResponse.json({
+        message: `Every lead matching "${keyword}" has already been contacted or has a draft waiting, so I didn't write anything new.${skipped}`,
+        drafts_created: 0,
+        skipped_contacted: skippedContacted,
+        skipped_drafted: skippedDrafted,
+      })
+    }
+
     // STEP 2.5 — for leads missing an email, try to find one on their website
-    const withEmail = allLeads.filter((l: any) => l.email)
-    const missingEmail = allLeads.filter((l: any) => !l.email && l.website)
+    const withEmail = eligibleLeads.filter((l: any) => l.email)
+    const missingEmail = eligibleLeads.filter((l: any) => !l.email && l.website)
 
     let emailsFound = 0
     const toScrape = missingEmail.slice(0, 8) // keep within serverless time limits
@@ -118,8 +179,10 @@ If the instruction is not about drafting/writing emails to leads, set action to 
 
     if (leads.length === 0) {
       return NextResponse.json({
-        message: `Found ${allLeads.length} lead(s) matching "${keyword}", but couldn't find email addresses on any of their websites. You can add emails manually (open a lead → edit) and ask me again.`,
+        message: `Found ${eligibleLeads.length} uncontacted lead(s) matching "${keyword}", but couldn't find email addresses on any of their websites. You can add emails manually (open a lead → edit) and ask me again.${skipped}`,
         drafts_created: 0,
+        skipped_contacted: skippedContacted,
+        skipped_drafted: skippedDrafted,
       })
     }
 
@@ -188,8 +251,10 @@ Return ONLY valid JSON in exactly this format:
     }
 
     return NextResponse.json({
-      message: `Drafted ${inserted?.length ?? 0} email(s) for leads matching "${keyword}"${emailsFound > 0 ? ` (found ${emailsFound} email address${emailsFound === 1 ? '' : 'es'} on their websites automatically)` : ''}. Review them below — edit anything you like, then send one by one.`,
+      message: `Drafted ${inserted?.length ?? 0} email(s) for leads matching "${keyword}"${emailsFound > 0 ? ` (found ${emailsFound} email address${emailsFound === 1 ? '' : 'es'} on their websites automatically)` : ''}.${skipped} Review them below — edit anything you like, then send one by one.`,
       drafts_created: inserted?.length ?? 0,
+      skipped_contacted: skippedContacted,
+      skipped_drafted: skippedDrafted,
     })
   } catch (err: any) {
     console.error('Assistant error:', err)
