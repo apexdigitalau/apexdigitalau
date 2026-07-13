@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
+import { findEmailForWebsite } from '@/lib/email-finder'
 
 export const maxDuration = 60
 
@@ -62,27 +63,62 @@ If the instruction is not about drafting/writing emails to leads, set action to 
     const keyword = (parsed.keyword || '').replace(/[%,]/g, '').trim()
     const pitch = parsed.pitch || `${BRAND.services}`
 
-    // STEP 2 — find matching leads that have an email address
+    // STEP 2 — find matching leads (with or without emails)
     const supabase = getSupabaseAdmin()
     let query = supabase
       .from('leads')
       .select('id, company_name, industry, website, email, address, google_rating')
-      .not('email', 'is', null)
-      .neq('email', '')
-      .limit(count)
+      .limit(count * 3)
 
     if (keyword) {
       query = query.or(`industry.ilike.%${keyword}%,company_name.ilike.%${keyword}%`)
     }
 
-    const { data: leads, error: leadsErr } = await query
+    const { data: allLeads, error: leadsErr } = await query
     if (leadsErr) {
       return NextResponse.json({ error: leadsErr.message }, { status: 500 })
     }
 
-    if (!leads || leads.length === 0) {
+    if (!allLeads || allLeads.length === 0) {
       return NextResponse.json({
-        message: `No leads matching "${keyword}" with an email address were found. Tip: leads found via Google usually have no email — add emails to leads first (open a lead → edit), then ask me again.`,
+        message: `No leads matching "${keyword}" found in your CRM. Try the Find Leads button on the Leads page first to pull some in from Google.`,
+        drafts_created: 0,
+      })
+    }
+
+    // STEP 2.5 — for leads missing an email, try to find one on their website
+    const withEmail = allLeads.filter((l: any) => l.email)
+    const missingEmail = allLeads.filter((l: any) => !l.email && l.website)
+
+    let emailsFound = 0
+    const toScrape = missingEmail.slice(0, 15) // keep within serverless time limits
+
+    // scrape in parallel batches of 5
+    for (let i = 0; i < toScrape.length; i += 5) {
+      if (withEmail.length >= count) break
+      const batch = toScrape.slice(i, i + 5)
+      const results = await Promise.allSettled(
+        batch.map(async (lead: any) => {
+          const email = await findEmailForWebsite(lead.website)
+          return { lead, email }
+        })
+      )
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value.email) {
+          const { lead, email } = r.value
+          await supabase.from('leads').update({ email }).eq('id', lead.id)
+          lead.email = email
+          withEmail.push(lead)
+          emailsFound++
+        }
+      }
+    }
+
+    const leads = withEmail.slice(0, count)
+
+    if (leads.length === 0) {
+      return NextResponse.json({
+        message: `Found ${allLeads.length} lead(s) matching "${keyword}", but couldn't find email addresses on any of their websites. You can add emails manually (open a lead → edit) and ask me again.`,
         drafts_created: 0,
       })
     }
@@ -152,7 +188,7 @@ Return ONLY valid JSON in exactly this format:
     }
 
     return NextResponse.json({
-      message: `Drafted ${inserted?.length ?? 0} email(s) for leads matching "${keyword}". Review them below — edit anything you like, then send one by one.`,
+      message: `Drafted ${inserted?.length ?? 0} email(s) for leads matching "${keyword}"${emailsFound > 0 ? ` (found ${emailsFound} email address${emailsFound === 1 ? '' : 'es'} on their websites automatically)` : ''}. Review them below — edit anything you like, then send one by one.`,
       drafts_created: inserted?.length ?? 0,
     })
   } catch (err: any) {
