@@ -50,7 +50,15 @@ export default function AssistantPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instruction }),
       })
-      const data = await res.json()
+      // A gateway timeout returns an HTML error page, not JSON — parse defensively.
+      const raw = await res.text()
+      let data: any
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        setMessage('The request took too long — try asking for fewer emails at once.')
+        return
+      }
       if (res.ok) {
         setMessage(data.message)
         if (data.drafts_created > 0) {

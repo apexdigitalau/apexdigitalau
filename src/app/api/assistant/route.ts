@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
 import { findEmailForWebsite } from '@/lib/email-finder'
 
-export const maxDuration = 60
+export const maxDuration = 300
 
 async function callClaude(system: string, user: string, maxTokens = 2000) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -91,7 +91,7 @@ If the instruction is not about drafting/writing emails to leads, set action to 
     const missingEmail = allLeads.filter((l: any) => !l.email && l.website)
 
     let emailsFound = 0
-    const toScrape = missingEmail.slice(0, 15) // keep within serverless time limits
+    const toScrape = missingEmail.slice(0, 8) // keep within serverless time limits
 
     // scrape in parallel batches of 5
     for (let i = 0; i < toScrape.length; i += 5) {
