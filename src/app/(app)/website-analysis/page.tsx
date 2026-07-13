@@ -41,30 +41,6 @@ const CATEGORIES = [
   { key: 'cta_score', label: 'CTA' },
 ] as const
 
-const MOCK_ANALYSES: Analysis[] = [
-  {
-    id: '1', lead_id: '1', overall_score: 42, design_score: 35, speed_score: 40, seo_score: 52, mobile_score: 28, trust_score: 55, cta_score: 38, ai_summary: 'Smith & Sons Plumbing has a severely outdated website that is actively costing them customers. The site has no mobile optimisation, slow load times, and lacks any trust signals like reviews or certifications. The call-to-action is buried below the fold.',
-    issues: ['No mobile responsive design', 'Page load time >5 seconds', 'No SSL certificate visible', 'No customer reviews displayed', 'CTA only visible after scrolling', 'No Google Maps embed'],
-    improvements: ['Add mobile-responsive design — estimated +40% mobile traffic', 'Implement SSL and display trust badges', 'Add Google Reviews widget', 'Place click-to-call button in header', 'Add before/after project gallery'],
-    estimated_conversion_increase: 180, created_at: '2024-01-15T00:00:00Z',
-    leads: { company_name: 'Smith & Sons Plumbing', website: 'https://smithsons.com.au', industry: 'Plumbing' }
-  },
-  {
-    id: '2', lead_id: '3', overall_score: 35, design_score: 40, speed_score: 28, seo_score: 38, mobile_score: 45, trust_score: 30, cta_score: 32, ai_summary: 'Coastal Cafe & Bakery\'s site looks decent on mobile but suffers from very slow load times due to unoptimised images. No online ordering capability is a critical missed opportunity.',
-    issues: ['Images not optimised (avg 2.4MB each)', 'No online ordering or menu PDF', 'No booking system for events', 'Limited social proof', 'Google My Business not linked'],
-    improvements: ['Compress and convert images to WebP format', 'Integrate online ordering (e.g. Square or custom)', 'Add event booking calendar', 'Embed Instagram feed for social proof'],
-    estimated_conversion_increase: 220, created_at: '2024-01-13T00:00:00Z',
-    leads: { company_name: 'Coastal Cafe & Bakery', website: 'https://coastalcafe.com.au', industry: 'Food & Beverage' }
-  },
-  {
-    id: '3', lead_id: '8', overall_score: 29, design_score: 22, speed_score: 31, seo_score: 28, mobile_score: 25, trust_score: 38, cta_score: 30, ai_summary: 'Quantum Real Estate has one of the weakest websites in their market. The design is from 2015, property listings are difficult to browse, and there is no lead capture form.',
-    issues: ['Outdated design aesthetic', 'No property search/filter functionality', 'No lead capture or email signup', 'Very slow on mobile (6.2s load)', 'No virtual tour integration', 'Missing team photos and bios'],
-    improvements: ['Complete redesign with modern property portal layout', 'Add property search with filters', 'Implement lead capture with instant valuation tool', 'Add virtual tour embeds', 'Add team bios for trust'],
-    estimated_conversion_increase: 310, created_at: '2024-01-08T00:00:00Z',
-    leads: { company_name: 'Quantum Real Estate', website: 'https://quantumre.com.au', industry: 'Real Estate' }
-  },
-]
-
 function AnalysisCard({ analysis, expanded, onToggle, onEmail }: {
   analysis: Analysis
   expanded: boolean

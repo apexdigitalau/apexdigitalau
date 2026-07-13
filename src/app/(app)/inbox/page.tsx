@@ -23,13 +23,6 @@ interface Email {
 
 type TabFilter = 'all' | 'unread' | 'starred' | 'waiting' | 'archived'
 
-const MOCK_EMAILS: Email[] = [
-  { id: '1', lead_id: '3', direction: 'inbound', from_email: 'contact@coastalcafe.com.au', from_name: 'Emma Watson', subject: 'Re: Your website could be losing customers', body: "Hi there,\n\nThanks for reaching out. You actually caught me at the right time - we've been thinking about a website refresh for a while now.\n\nThe comparison you showed between our site and competitors was eye-opening. We especially want to fix the mobile experience and add online ordering.\n\nCould we have a quick 20-minute chat this week?\n\nCheers,\nEmma", status: 'unread', created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), leads: { company_name: 'Coastal Cafe & Bakery', status: 'replied' } },
-  { id: '2', lead_id: '4', direction: 'inbound', from_email: 'hello@techstart.com.au', from_name: 'Mike Chen', subject: 'Re: Quick question about TechStart\'s website', body: "Hey,\n\nYep, we've definitely noticed the high bounce rate. Our current site is 4 years old and doesn't reflect where we are as a company now.\n\nWe have budget set aside for a redesign in Q1. Send me your portfolio and pricing.\n\nMike", status: 'read', created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), leads: { company_name: 'TechStart Solutions', status: 'replied' } },
-  { id: '3', lead_id: '7', direction: 'inbound', from_email: 'bella@bellasbeauty.com.au', from_name: 'Bella Romano', subject: 'Re: Website proposal for Bella\'s Beauty Studio', body: "Hi,\n\nI've looked over the proposal and it all looks great. Just one question - can we add a booking system integration with our existing Fresha account?\n\nIf yes, I'm ready to go ahead.\n\nBella x", status: 'unread', created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), leads: { company_name: "Bella's Beauty Studio", status: 'proposal_sent' } },
-  { id: '4', lead_id: '5', direction: 'outbound', from_email: 'team@apexdigital.au', from_name: 'Apex Digital', subject: 'Green Gardens — website proposal', body: "Hi Tom,\n\nGreat speaking with you yesterday! As promised, here is our proposal for the Green Gardens website redesign...", status: 'replied', created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), leads: { company_name: 'Green Gardens Landscaping', status: 'meeting_booked' } },
-]
-
 export default function InboxPage() {
   const [emails, setEmails] = useState<Email[]>([])
   const [loading, setLoading] = useState(true)

@@ -43,14 +43,6 @@ function MetricPill({ label, value, icon: Icon, color }: { label: string; value:
   )
 }
 
-// Fallback mock data while DB is empty
-const MOCK: Campaign[] = [
-  { id: '1', name: 'January Plumbers Outreach', subject: 'Your website is costing you customers...', status: 'sent', sent_count: 284, delivered_count: 271, opened_count: 112, replied_count: 31, bounced_count: 13, spam_count: 2, sent_at: '2024-01-15T09:00:00Z', leads_targeted: 284, created_at: '2024-01-10T00:00:00Z' },
-  { id: '2', name: 'Healthcare Q1 Campaign', subject: 'Is your dental practice invisible online?', status: 'sending', sent_count: 147, delivered_count: 143, opened_count: 61, replied_count: 18, bounced_count: 4, spam_count: 1, sent_at: '2024-01-18T09:00:00Z', leads_targeted: 320, created_at: '2024-01-15T00:00:00Z' },
-  { id: '3', name: 'Real Estate Agents Feb', subject: '3 reasons your property listings aren\'t converting', status: 'scheduled', sent_count: 0, delivered_count: 0, opened_count: 0, replied_count: 0, bounced_count: 0, spam_count: 0, sent_at: '2024-02-01T09:00:00Z', leads_targeted: 210, created_at: '2024-01-20T00:00:00Z' },
-  { id: '4', name: 'Cafes & Restaurants Draft', subject: '', status: 'draft', sent_count: 0, delivered_count: 0, opened_count: 0, replied_count: 0, bounced_count: 0, spam_count: 0, sent_at: null, leads_targeted: 0, created_at: '2024-01-21T00:00:00Z' },
-]
-
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)

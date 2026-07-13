@@ -284,15 +284,10 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- =============================================
--- SEED DATA (Optional demo leads)
+-- SEED DATA
 -- =============================================
--- Insert sample leads for testing
-INSERT INTO public.leads (company_name, industry, website, email, phone, google_rating, contact_name, status, notes) VALUES
-('Smith & Sons Plumbing', 'Plumbing', 'https://smithsons.com.au', 'info@smithsons.com.au', '02 9123 4567', 3.8, 'John Smith', 'new', 'Old website, no mobile version'),
-('Melbourne Dental Centre', 'Healthcare', 'https://melbournedental.com.au', 'hello@melbournedental.com.au', '03 8765 4321', 4.2, 'Dr. Sarah Lee', 'ready_to_contact', 'Slow loading, poor SEO'),
-('Coastal Cafe & Bakery', 'Food & Beverage', 'https://coastalcafe.com.au', 'contact@coastalcafe.com.au', '07 5555 1234', 4.7, 'Emma Watson', 'email_sent', 'No online ordering, basic design'),
-('TechStart Solutions', 'Technology', 'https://techstart.com.au', 'hello@techstart.com.au', '02 9999 8888', 4.0, 'Mike Chen', 'replied', 'Interested in redesign'),
-('Green Gardens Landscaping', 'Landscaping', 'https://greengardens.com.au', 'info@greengardens.com.au', '03 4444 5555', 4.5, 'Tom Green', 'meeting_booked', 'Meeting Thursday 2pm'),
-('Sydney Law Group', 'Legal', 'https://sydneylawgroup.com.au', 'contact@sydneylawgroup.com.au', '02 8888 7777', 4.1, 'James Morrison', 'won', 'Signed contract $8500'),
-('Bella''s Beauty Studio', 'Beauty & Wellness', 'https://bellasbeauty.com.au', 'bella@bellasbeauty.com.au', '04 2222 3333', 4.8, 'Bella Romano', 'proposal_sent', 'Awaiting approval'),
-('Quantum Real Estate', 'Real Estate', 'https://quantumre.com.au', 'team@quantumre.com.au', '02 7777 6666', 3.9, 'David Park', 'new', 'Multiple locations, needs major overhaul');
+-- No demo/sample rows are seeded. The only INSERT in this file is the default
+-- settings row above, which the app requires.
+--
+-- The previous version of this file seeded 8 sample leads. If you ran it against
+-- your database, run delete-demo-data.sql (repo root) to remove those rows.

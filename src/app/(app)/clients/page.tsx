@@ -31,13 +31,6 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', icon: XCircle,      color: 'text-red-400 bg-red-400/10' },
 }
 
-const MOCK_CLIENTS: Client[] = [
-  { id: '1', company_name: 'Sydney Law Group', contact_name: 'James Morrison', email: 'james@sydneylawgroup.com.au', phone: '02 8888 7777', website: 'https://sydneylawgroup.com.au', project_status: 'active', project_value: 8500, project_start: '2024-01-20', project_end: '2024-03-01', notes: 'New site + SEO package', created_at: '2024-01-15T00:00:00Z' },
-  { id: '2', company_name: 'Green Gardens Landscaping', contact_name: 'Tom Green', email: 'tom@greengardens.com.au', phone: '03 4444 5555', website: 'https://greengardens.com.au', project_status: 'active', project_value: 5200, project_start: '2024-01-18', project_end: '2024-02-28', notes: 'Full rebrand + ecomm', created_at: '2024-01-12T00:00:00Z' },
-  { id: '3', company_name: 'Blue Sky Accounting', contact_name: 'Sarah Blue', email: 'sarah@bluesky.com.au', phone: '07 3333 2222', website: 'https://blueskaccounting.com.au', project_status: 'completed', project_value: 6800, project_start: '2023-11-01', project_end: '2023-12-20', notes: 'New website delivered on time', created_at: '2023-10-25T00:00:00Z' },
-  { id: '4', company_name: 'Perth Fitness Studio', contact_name: 'Jake Perry', email: 'jake@perthfitness.com.au', phone: '08 9999 1111', website: 'https://perthfitness.com.au', project_status: 'paused', project_value: 3900, project_start: '2024-01-05', project_end: null, notes: 'On hold — client travelling', created_at: '2024-01-03T00:00:00Z' },
-]
-
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
