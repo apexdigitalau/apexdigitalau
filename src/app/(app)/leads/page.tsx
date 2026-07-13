@@ -51,6 +51,7 @@ export default function LeadsPage() {
   const [findLocation, setFindLocation] = useState('')
   const [findLimit, setFindLimit] = useState(20)
   const [findResult, setFindResult] = useState<{ found: number; inserted: number } | null>(null)
+  const [findingEmails, setFindingEmails] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [newLead, setNewLead] = useState({
@@ -170,6 +171,28 @@ export default function LeadsPage() {
     }
   }
 
+  async function handleFindEmails() {
+    setFindingEmails(true)
+    try {
+      const res = await fetch('/api/leads/find-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 30 }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert(`Scanned ${data.scanned} leads · found ${data.found} emails`)
+        fetchLeads()
+      } else {
+        alert('Find emails failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err) {
+      alert('Failed to find emails: ' + String(err))
+    } finally {
+      setFindingEmails(false)
+    }
+  }
+
   async function handleAddLead() {
     if (!newLead.company_name.trim()) {
       alert('Company name is required')
@@ -225,6 +248,14 @@ export default function LeadsPage() {
               className="flex items-center gap-2 px-3 py-2 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors"
             >
               <Search className="w-4 h-4" /> Find Leads
+            </button>
+            <button
+              onClick={handleFindEmails}
+              disabled={findingEmails}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50"
+            >
+              {findingEmails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              {findingEmails ? 'Finding…' : 'Find Missing Emails'}
             </button>
             <button
               onClick={() => fileRef.current?.click()}
