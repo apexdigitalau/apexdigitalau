@@ -14,9 +14,12 @@ export async function GET() {
   const windowStartISO = windowStart.toISOString();
 
   const [windowEmails, windowClients, allClients, allLeads] = await Promise.all([
+    // Unsent drafts are outbound rows with status 'draft'. They are excluded here so they
+    // cannot count towards the monthly sent series, subject-line volume, or reply rate.
     db
       .from("emails")
       .select("created_at, direction, subject, opened_at, replied_at, status")
+      .neq("status", "draft")
       .gte("created_at", windowStartISO),
     db.from("clients").select("created_at, project_value").gte("created_at", windowStartISO),
     db.from("clients").select("project_value, lead_id"),

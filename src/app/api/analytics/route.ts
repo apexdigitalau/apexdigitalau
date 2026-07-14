@@ -29,6 +29,9 @@ export async function GET() {
   const weekStart = new Date(now.getTime() - 6 * DAY_MS);
   const revenueWindowStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
+  // Unsent drafts sit in the emails table as direction 'outbound', status 'draft' until
+  // they are actually sent, so every outbound count below filters them out — otherwise
+  // drafting mail would inflate sent volume and deflate the reply/open rates.
   const [
     leadsToday,
     leadsYesterday,
@@ -51,19 +54,19 @@ export async function GET() {
   ] = await Promise.all([
     db.from("leads").select("id", { count: "exact", head: true }).eq("date_added", today),
     db.from("leads").select("id", { count: "exact", head: true }).eq("date_added", yesterday),
-    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").gte("created_at", today),
-    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").gte("created_at", yesterday).lt("created_at", today),
+    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").gte("created_at", today),
+    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").gte("created_at", yesterday).lt("created_at", today),
     db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "inbound").gte("created_at", monthStart),
     db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "inbound").gte("created_at", lastMonthStart).lt("created_at", monthStart),
     db.from("leads").select("id", { count: "exact", head: true }).eq("status", "meeting_booked"),
     db.from("leads").select("id", { count: "exact", head: true }).eq("status", "won"),
     db.from("clients").select("project_value").gte("created_at", monthStart),
     db.from("clients").select("project_value").gte("created_at", lastMonthStart).lt("created_at", monthStart),
-    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound"),
-    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").not("opened_at", "is", null),
+    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft"),
+    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").not("opened_at", "is", null),
     db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "inbound"),
     db.from("leads").select("id", { count: "exact", head: true }),
-    db.from("emails").select("created_at, direction").gte("created_at", weekStart.toISOString()),
+    db.from("emails").select("created_at, direction").neq("status", "draft").gte("created_at", weekStart.toISOString()),
     db.from("clients").select("created_at, project_value").gte("created_at", revenueWindowStart.toISOString()),
     db.from("leads").select("id, company_name, industry, status, website_score").order("created_at", { ascending: false }).limit(5),
     db.from("leads").select("id, company_name, follow_up_date").not("follow_up_date", "is", null).lte("follow_up_date", today).order("follow_up_date", { ascending: true }).limit(5),
