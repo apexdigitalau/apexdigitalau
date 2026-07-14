@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BRAND } from "@/lib/brand";
+import { getSupabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Users,
@@ -19,11 +20,13 @@ import {
   Moon,
   BookOpen,
   Sparkles,
+  LogOut,
+  Loader2,
   X,
 } from "lucide-react";
 import { useTheme } from "@/components/common/ThemeProvider";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSidebar } from "@/components/layout/AppShell";
 
 function ThemeToggleButton() {
@@ -36,6 +39,95 @@ function ThemeToggleButton() {
       {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
       <span className="text-xs font-medium">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
     </button>
+  );
+}
+
+function AdminMenu() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside press and on Escape. pointerdown rather than click so the
+  // menu closes on touch as well as mouse.
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  // The sidebar stays mounted across navigations, so the menu would otherwise
+  // still be hanging open on the next page.
+  useEffect(() => setOpen(false), [pathname]);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    await getSupabase().auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      {open && (
+        // bottom-full opens upward: this sits at the bottom of the viewport, and
+        // neither the desktop aside nor the mobile drawer clips overflow.
+        <div
+          role="menu"
+          aria-label="Account"
+          className="absolute bottom-full left-0 right-0 mb-1 z-50 overflow-hidden rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg"
+        >
+          <button
+            role="menuitem"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 min-h-11 text-xs font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-60"
+          >
+            {signingOut ? (
+              <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+            ) : (
+              <LogOut className="w-4 h-4 shrink-0" />
+            )}
+            <span>{signingOut ? "Signing out..." : "Sign out"}</span>
+          </button>
+        </div>
+      )}
+
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cn(
+          "w-full flex items-center gap-2.5 px-2 py-2 rounded-md transition-colors",
+          open ? "bg-[hsl(var(--accent))]" : "hover:bg-[hsl(var(--accent))]"
+        )}
+      >
+        <div className="w-7 h-7 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center text-[hsl(var(--primary-foreground))] text-xs font-bold shrink-0">
+          A
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-xs font-medium text-[hsl(var(--foreground))] truncate">Admin</p>
+          <p className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">apex@apexdigital.com.au</p>
+        </div>
+        <ChevronDown
+          className={cn(
+            "w-3.5 h-3.5 text-[hsl(var(--muted-foreground))] shrink-0 transition-transform duration-150",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+    </div>
   );
 }
 
@@ -126,16 +218,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Theme toggle + User */}
       <div className="p-3 border-t border-[hsl(var(--border))] space-y-1">
         <ThemeToggleButton />
-        <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-[hsl(var(--accent))] transition-colors group">
-          <div className="w-7 h-7 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center text-[hsl(var(--primary-foreground))] text-xs font-bold shrink-0">
-            A
-          </div>
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-xs font-medium text-[hsl(var(--foreground))] truncate">Admin</p>
-            <p className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">apex@apexdigital.com.au</p>
-          </div>
-          <ChevronDown className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))] shrink-0" />
-        </button>
+        <AdminMenu />
       </div>
     </>
   );
