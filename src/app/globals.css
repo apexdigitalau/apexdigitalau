@@ -45,7 +45,47 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     -webkit-font-smoothing: antialiased;
+    /* Stops the whole app rubber-banding behind the standalone PWA shell. */
+    overscroll-behavior-y: none;
   }
+
+  /* iOS Safari zooms the viewport whenever a focused field is under 16px.
+     The UI is designed at 14px, so only force 16px where the zoom would fire. */
+  @media (max-width: 1023px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+
+  /* Touch devices get comfortable hit areas without changing the pointer UI.
+     Height only — widths stay fluid so flex rows don't blow out. Controls that
+     also need width opt in with .tap-target. */
+  @media (hover: none) and (pointer: coarse) {
+    button,
+    [role="button"],
+    select,
+    input[type="checkbox"] {
+      min-height: 44px;
+    }
+    .tap-target {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+}
+
+/* Safe-area helpers — required because appleWebApp.statusBarStyle is
+   'black-translucent', which draws content under the iOS status bar. */
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Momentum scrolling for the horizontally-scrollable tables and tab strips. */
+.touch-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }

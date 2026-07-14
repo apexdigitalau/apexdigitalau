@@ -125,9 +125,9 @@ export default function AssistantPage() {
     <div className="flex flex-col h-full">
       <TopBar title="AI Assistant" subtitle="Tell the AI what to do — review everything before it sends" />
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl w-full">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-safe space-y-6 max-w-4xl w-full">
         {/* Command box */}
-        <div className="border border-[hsl(var(--border))] rounded-xl bg-[hsl(var(--card))] p-5">
+        <div className="border border-[hsl(var(--border))] rounded-xl bg-[hsl(var(--card))] p-4 md:p-5">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-[hsl(var(--primary))]" />
             <p className="text-sm font-semibold text-[hsl(var(--foreground))]">What would you like me to do?</p>
@@ -140,12 +140,13 @@ export default function AssistantPage() {
             rows={2}
             className="w-full px-3 py-2.5 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] resize-none"
           />
-          <div className="flex items-center justify-between mt-3">
+          {/* Stacks on mobile so the hint text can't squeeze Ask AI to nothing. */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
             <p className="text-xs text-[hsl(var(--muted-foreground))]">Drafts land below for your review — nothing sends without you.</p>
             <button
               onClick={handleRun}
               disabled={running || !instruction.trim()}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
+              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
             >
               {running ? <><Loader2 className="w-4 h-4 animate-spin" /> Working…</> : <><Sparkles className="w-4 h-4" /> Ask AI</>}
             </button>
@@ -219,11 +220,11 @@ export default function AssistantPage() {
                             className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] resize-y"
                           />
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
                           <button
                             onClick={() => handleDiscard(d)}
                             disabled={discardingId === d.id || sendingId === d.id}
-                            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50 text-[hsl(var(--muted-foreground))]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50 text-[hsl(var(--muted-foreground))]"
                           >
                             {discardingId === d.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Discard
                           </button>

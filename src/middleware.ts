@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+const PUBLIC_PWA_FILES = new Set([
+  '/manifest.webmanifest',
+  '/sw.js',
+  '/offline.html',
+])
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
@@ -27,6 +33,13 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
+
+  // The PWA shell must be fetchable while signed out: the OS reads the manifest
+  // before there's ever a session, and a service worker script that 307s to the
+  // login page fails registration outright. None of these expose CRM data.
+  if (PUBLIC_PWA_FILES.has(pathname)) {
+    return response
+  }
 
   if (!user && !pathname.startsWith('/auth') && !pathname.startsWith('/api')) {
     const redirectUrl = new URL('/auth/login', request.url)

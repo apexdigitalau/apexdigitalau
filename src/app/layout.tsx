@@ -1,12 +1,15 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ToastProvider } from '@/components/common/Toast'
 import { ThemeProvider } from '@/components/common/ThemeProvider'
+import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar'
 import { BRAND } from '@/lib/brand'
 
 export const metadata: Metadata = {
   title: BRAND.pageTitle,
   description: BRAND.tagline,
+  applicationName: BRAND.companyName,
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -17,8 +20,16 @@ export const metadata: Metadata = {
   },
 }
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: '#181A20',
+  width: 'device-width',
+  initialScale: 1,
+  // 'black-translucent' draws the app under the status bar, so the layout has
+  // to opt into the full screen and pad itself back with env(safe-area-inset-*).
+  viewportFit: 'cover',
+  // Keeps the layout above the on-screen keyboard instead of letting it
+  // overlay focused inputs.
+  interactiveWidget: 'resizes-content',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -30,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </ToastProvider>
         </ThemeProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   )

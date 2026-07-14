@@ -19,12 +19,13 @@ const SECTIONS = [
 
 function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between py-4 border-b border-[hsl(var(--border))] last:border-0">
-      <div className="max-w-xs">
+    // Label above control on mobile; side-by-side once there's room for both.
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-6 py-4 border-b border-[hsl(var(--border))] last:border-0">
+      <div className="sm:max-w-xs min-w-0">
         <p className="text-sm font-medium text-[hsl(var(--foreground))]">{label}</p>
         {description && <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{description}</p>}
       </div>
-      <div className="ml-6 flex-1 max-w-sm">{children}</div>
+      <div className="w-full sm:flex-1 sm:max-w-sm min-w-0">{children}</div>
     </div>
   );
 }
@@ -209,9 +210,27 @@ export default function SettingsPage() {
     <div className="flex flex-col h-full">
       <TopBar title="Settings" subtitle="Configure your CRM workspace" />
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Settings sidebar */}
-        <div className="w-48 border-r border-[hsl(var(--border))] p-3 space-y-0.5 shrink-0">
+      {/* Section nav: a horizontal scrolling tab strip on mobile (a second fixed
+          sidebar would eat half a phone screen), a rail on desktop. */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="md:hidden touch-scroll-x flex items-center gap-1 px-3 py-2 border-b border-[hsl(var(--border))] shrink-0">
+          {SECTIONS.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setActiveSection(s.id)}
+              className={cn(
+                "px-3 py-2 text-sm rounded-md whitespace-nowrap shrink-0 transition-colors",
+                activeSection === s.id
+                  ? "bg-[hsl(var(--primary))] text-white font-medium"
+                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="hidden md:block md:w-48 border-r border-[hsl(var(--border))] p-3 space-y-0.5 shrink-0">
           {SECTIONS.map(s => (
             <button
               key={s.id}
@@ -229,7 +248,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 min-w-0 overflow-y-auto p-4 md:p-6 pb-safe">
           {activeSection === "integrations" && (
             <div className="max-w-2xl space-y-6">
               <div>

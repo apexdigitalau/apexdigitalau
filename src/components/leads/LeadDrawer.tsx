@@ -227,19 +227,21 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
   return (
     <>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-full max-w-2xl bg-[hsl(var(--card))] border-l border-[hsl(var(--border))] z-50 flex flex-col shadow-2xl">
+      <div className="fixed right-0 top-0 h-dvh w-full max-w-2xl bg-[hsl(var(--card))] border-l border-[hsl(var(--border))] z-50 flex flex-col shadow-2xl pt-safe">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-[hsl(var(--border))]">
-          <div className="flex items-start gap-4">
+        <div className="flex items-start justify-between gap-3 p-4 md:p-6 border-b border-[hsl(var(--border))]">
+          <div className="flex items-start gap-3 md:gap-4 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-[hsl(var(--primary)/0.1)] flex items-center justify-center flex-shrink-0">
               <Building2 className="w-5 h-5 text-[hsl(var(--primary))]" />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">{lead.company_name}</h2>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">{lead.industry}</p>
+            {/* min-w-0 + truncate, or a long company name shoves the close button
+                off the right edge of the screen. */}
+            <div className="min-w-0">
+              <h2 className="text-base md:text-lg font-semibold text-[hsl(var(--foreground))] truncate">{lead.company_name}</h2>
+              <p className="text-sm text-[hsl(var(--muted-foreground))] truncate">{lead.industry}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
             <div className="relative">
               <button
                 onClick={() => setStatusOpen(!statusOpen)}
@@ -272,12 +274,12 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[hsl(var(--border))] px-6">
+        <div className="touch-scroll-x flex border-b border-[hsl(var(--border))] px-4 md:px-6">
           {(['overview', 'email', 'notes', 'history'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`py-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-[hsl(var(--primary))] text-[hsl(var(--primary))]' : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}
+              className={`py-3 px-1 mr-5 md:mr-6 text-sm font-medium whitespace-nowrap shrink-0 border-b-2 transition-colors ${tab === t ? 'border-[hsl(var(--primary))] text-[hsl(var(--primary))]' : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}
             >
               {t === 'email' ? 'AI Email' : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -285,7 +287,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-safe">
 
           {/* OVERVIEW */}
           {tab === 'overview' && editing && (

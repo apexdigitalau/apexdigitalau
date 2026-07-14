@@ -90,14 +90,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-150",
+                // min-h-11 (44px) — these are <a>, so the global touch rule for
+                // buttons doesn't cover them.
+                "flex items-center gap-2.5 px-3 py-2 min-h-11 rounded-md text-sm transition-all duration-150",
                 active
                   ? "bg-[hsl(var(--primary))] text-white font-medium shadow-sm"
                   : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]"
               )}
             >
               <item.icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.5 : 2} />
-              <span>{item.name}</span>
+              <span className="truncate">{item.name}</span>
               {item.name === "Inbox" && notifCount > 0 && (
                 <span className={cn(
                   "ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
@@ -160,16 +162,18 @@ export function Sidebar() {
         className={cn(
           "lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col",
           "bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]",
+          "pt-safe pb-safe",
           "transform transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "-translate-x-full"
         )}
+        aria-hidden={!open}
       >
         <button
           onClick={() => setOpen(false)}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]"
+          className="tap-target absolute top-[max(0.75rem,env(safe-area-inset-top))] right-2 z-10 w-11 h-11 flex items-center justify-center rounded-md hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]"
           aria-label="Close menu"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
         <SidebarContent onNavigate={() => setOpen(false)} />
       </aside>

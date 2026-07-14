@@ -272,7 +272,7 @@ export default function LeadsPage() {
         }
       />
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 md:p-6 pb-safe">
         {/* Import result banner */}
         {importResult && (
           <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
@@ -301,7 +301,7 @@ export default function LeadsPage() {
         </div>
 
         {/* Status tabs */}
-        <div className="flex items-center gap-1 mb-4 overflow-x-auto">
+        <div className="touch-scroll-x flex items-center gap-1 mb-4 pb-1">
           <button
             onClick={() => setStatusFilter('all')}
             className={cn(
@@ -328,17 +328,17 @@ export default function LeadsPage() {
           })}
         </div>
 
-        {/* Bulk actions */}
+        {/* Bulk actions — wraps rather than pushing Delete off the screen edge. */}
         {selected.size > 0 && (
-          <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-[hsl(var(--primary)/0.08)] border border-[hsl(var(--primary)/0.2)]">
-            <span className="text-sm font-medium text-[hsl(var(--primary))]">{selected.size} selected</span>
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg bg-[hsl(var(--primary)/0.08)] border border-[hsl(var(--primary)/0.2)]">
+            <span className="text-sm font-medium text-[hsl(var(--primary))] w-full sm:w-auto">{selected.size} selected</span>
             <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:opacity-90 transition-opacity">
               <Mail className="w-3.5 h-3.5" /> Bulk Email
             </button>
             <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors">
               <Download className="w-3.5 h-3.5" /> Export
             </button>
-            <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors ml-auto">
+            <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors sm:ml-auto">
               <Trash2 className="w-3.5 h-3.5" /> Delete
             </button>
           </div>
@@ -346,7 +346,7 @@ export default function LeadsPage() {
 
         {/* Table */}
         <div className="border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="touch-scroll-x">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.5)]">
@@ -416,10 +416,12 @@ export default function LeadsPage() {
                         ? <CheckSquare className="w-4 h-4 text-[hsl(var(--primary))]" />
                         : <Square className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />}
                     </td>
-                    <td className="p-3">
-                      <div className="font-medium text-[hsl(var(--foreground))]">{lead.company_name}</div>
+                    <td className="p-3 max-w-[190px] md:max-w-xs">
+                      {/* Capped + truncated so a long company name can't stretch
+                          the row and shove the status column off-screen. */}
+                      <div className="font-medium text-[hsl(var(--foreground))] truncate">{lead.company_name}</div>
                       <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5 flex items-center gap-2">
-                        <span>{lead.industry}</span>
+                        <span className="truncate">{lead.industry}</span>
                         {lead.website && (
                           <a href={lead.website} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
                             className="text-[hsl(var(--primary))] hover:underline flex items-center gap-0.5">
@@ -428,9 +430,9 @@ export default function LeadsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="p-3 hidden md:table-cell">
-                      {lead.contact_name && <div className="text-sm">{lead.contact_name}</div>}
-                      {lead.email && <div className="text-xs text-[hsl(var(--muted-foreground))]">{lead.email}</div>}
+                    <td className="p-3 hidden md:table-cell max-w-[220px]">
+                      {lead.contact_name && <div className="text-sm truncate">{lead.contact_name}</div>}
+                      {lead.email && <div className="text-xs text-[hsl(var(--muted-foreground))] truncate">{lead.email}</div>}
                     </td>
                     <td className="p-3">
                       <StatusBadge status={lead.status} />
@@ -482,16 +484,18 @@ export default function LeadsPage() {
 
       {/* Find Leads modal */}
       {findOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !finding && setFindOpen(false)}>
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={() => !finding && setFindOpen(false)}>
+          {/* Caps at the visible viewport (dvh, so the keyboard doesn't clip it)
+              and scrolls its body, keeping the header/close button reachable. */}
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-t-2xl sm:rounded-xl w-full max-w-md shadow-xl max-h-[92dvh] sm:max-h-[85dvh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 pb-4 shrink-0">
               <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">Find Leads from Google</h2>
-              <button onClick={() => !finding && setFindOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+              <button onClick={() => !finding && setFindOpen(false)} aria-label="Close" className="tap-target flex items-center justify-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="overflow-y-auto px-5 pb-5 pb-safe space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1.5">Industry / Business type</label>
                 <input
@@ -547,11 +551,13 @@ export default function LeadsPage() {
 
       {/* Add Lead modal */}
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !adding && setAddOpen(false)}>
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl w-full max-w-lg shadow-xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-[hsl(var(--border))]">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={() => !adding && setAddOpen(false)}>
+          {/* dvh, not vh: on iOS the keyboard shrinks the visual viewport, and a
+              vh-based cap would push the footer buttons underneath it. */}
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-t-2xl sm:rounded-xl w-full max-w-lg shadow-xl max-h-[92dvh] sm:max-h-[85dvh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[hsl(var(--border))] shrink-0">
               <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">Add New Lead</h2>
-              <button onClick={() => !adding && setAddOpen(false)} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+              <button onClick={() => !adding && setAddOpen(false)} aria-label="Close" className="tap-target flex items-center justify-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -561,7 +567,7 @@ export default function LeadsPage() {
                 <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Company name *</label>
                 <input type="text" value={newLead.company_name} onChange={e => setNewLead({ ...newLead, company_name: e.target.value })} placeholder="Acme Construction" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Industry</label>
                   <input type="text" value={newLead.industry} onChange={e => setNewLead({ ...newLead, industry: e.target.value })} placeholder="Builder" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
@@ -575,7 +581,7 @@ export default function LeadsPage() {
                 <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Website</label>
                 <input type="text" value={newLead.website} onChange={e => setNewLead({ ...newLead, website: e.target.value })} placeholder="https://example.com.au" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">Email</label>
                   <input type="email" value={newLead.email} onChange={e => setNewLead({ ...newLead, email: e.target.value })} placeholder="info@example.com" className="w-full px-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]" />
@@ -595,7 +601,7 @@ export default function LeadsPage() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-[hsl(var(--border))] flex gap-3">
+            <div className="p-5 pb-safe border-t border-[hsl(var(--border))] flex flex-col-reverse sm:flex-row gap-3 shrink-0">
               <button onClick={() => setAddOpen(false)} disabled={adding} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
               <button onClick={handleAddLead} disabled={adding || !newLead.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {adding ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><Plus className="w-4 h-4" /> Add Lead</>}

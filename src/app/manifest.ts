@@ -1,20 +1,24 @@
-// app/manifest.ts — Next.js 15 native PWA manifest.
-// Drop this file into your CRM's app/ directory. Next serves it at /manifest.webmanifest automatically.
+// Served by Next at /manifest.webmanifest.
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "Apex Digital CRM",
     short_name: "Apex CRM",
     description: "Leads, clients and outreach for Apex Digital AU",
-    start_url: "/",
-    display: "standalone",        // hides the browser chrome -> feels like an app
+    // Land on the dashboard rather than the root redirect.
+    start_url: "/dashboard",
+    scope: "/",
+    display: "standalone",
     background_color: "#181A20",
     theme_color: "#181A20",
-    orientation: "portrait",
+    // 'any' rather than 'portrait' so the CRM is usable landscape on a tablet.
+    orientation: "any",
     icons: [
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      // Android needs an explicit 'any' icon; a maskable-only set can render blank.
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
