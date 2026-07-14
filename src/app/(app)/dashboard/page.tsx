@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar'
 import { StatCard } from '@/components/dashboard/StatCard'
 import {
   Users, Mail, MessageSquare, Calendar, DollarSign,
-  RefreshCw, ArrowRight, Clock
+  RefreshCw, ArrowRight, Clock, Send, UserPlus
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -77,8 +77,10 @@ interface FollowUp {
 }
 
 interface Stats {
-  leads_today: number
-  emails_sent_today: number
+  today_emails_sent: number
+  today_leads: number
+  total_emails_sent: number
+  total_leads: number
   replies_received: number
   meetings_booked: number
   websites_sold: number
@@ -146,21 +148,35 @@ export default function DashboardPage() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+          <StatCard
+            title="Emails Sent Today"
+            value={stats?.today_emails_sent ?? 0}
+            change={stats?.deltas?.emails_sent_today ?? undefined}
+            changeLabel="vs yesterday"
+            icon={<Mail className="w-4 h-4" />}
+            loading={statsLoading}
+          />
           <StatCard
             title="Leads Today"
-            value={stats?.leads_today ?? 0}
+            value={stats?.today_leads ?? 0}
             change={stats?.deltas?.leads_today ?? undefined}
             changeLabel="vs yesterday"
             icon={<Users className="w-4 h-4" />}
             loading={statsLoading}
           />
           <StatCard
-            title="Emails Sent"
-            value={stats?.emails_sent_today ?? 0}
-            change={stats?.deltas?.emails_sent_today ?? undefined}
-            changeLabel="vs yesterday"
-            icon={<Mail className="w-4 h-4" />}
+            title="Total Emails Sent"
+            value={stats?.total_emails_sent ?? 0}
+            changeLabel="all time"
+            icon={<Send className="w-4 h-4" />}
+            loading={statsLoading}
+          />
+          <StatCard
+            title="Total Leads"
+            value={stats?.total_leads ?? 0}
+            changeLabel="all time"
+            icon={<UserPlus className="w-4 h-4" />}
             loading={statsLoading}
           />
           <StatCard

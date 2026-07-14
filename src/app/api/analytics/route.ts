@@ -3,8 +3,59 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 
 const DAY_MS = 86_400_000;
 
+// The business runs on Sydney time, so "today" must mean the Sydney day, not the
+// UTC day the server happens to be in — otherwise the daily counters roll over at
+// 10-11am local and the morning's activity lands on the wrong day.
+const TZ = "Australia/Sydney";
+
+// Sydney's UTC offset (ms) at a given instant. Read from Intl rather than hardcoded
+// so AEST/AEDT is handled without a DST table.
+function tzOffsetMs(at: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(at);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  const wallClock = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour") % 24,
+    get("minute"),
+    get("second"),
+  );
+  // Offsets are whole minutes; round away the sub-second noise from the two clocks.
+  return Math.round((wallClock - at.getTime()) / 60_000) * 60_000;
+}
+
+// The instant of Sydney midnight for whatever Sydney day `at` falls in.
+function dayStart(at: Date): Date {
+  const offset = tzOffsetMs(at);
+  const wallClock = new Date(at.getTime() + offset);
+  const midnight = Date.UTC(
+    wallClock.getUTCFullYear(),
+    wallClock.getUTCMonth(),
+    wallClock.getUTCDate(),
+  );
+  // Re-resolve the offset at the candidate midnight: on a DST boundary the offset
+  // at `at` is not necessarily the offset that was in force at midnight.
+  return new Date(midnight - tzOffsetMs(new Date(midnight - offset)));
+}
+
+// Sydney calendar date as YYYY-MM-DD, for comparing against plain date columns.
 function dayKey(d: Date): string {
-  return d.toISOString().split("T")[0];
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
 }
 
 function monthKey(d: Date): string {
@@ -23,7 +74,8 @@ export async function GET() {
   const now = new Date();
 
   const today = dayKey(now);
-  const yesterday = dayKey(new Date(now.getTime() - DAY_MS));
+  const todayStart = dayStart(now).toISOString();
+  const yesterdayStart = dayStart(new Date(dayStart(now).getTime() - DAY_MS)).toISOString();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
   const weekStart = new Date(now.getTime() - 6 * DAY_MS);
@@ -52,10 +104,10 @@ export async function GET() {
     recentLeads,
     followUps,
   ] = await Promise.all([
-    db.from("leads").select("id", { count: "exact", head: true }).eq("date_added", today),
-    db.from("leads").select("id", { count: "exact", head: true }).eq("date_added", yesterday),
-    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").gte("created_at", today),
-    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").gte("created_at", yesterday).lt("created_at", today),
+    db.from("leads").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
+    db.from("leads").select("id", { count: "exact", head: true }).gte("created_at", yesterdayStart).lt("created_at", todayStart),
+    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").gte("created_at", todayStart),
+    db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "outbound").neq("status", "draft").gte("created_at", yesterdayStart).lt("created_at", todayStart),
     db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "inbound").gte("created_at", monthStart),
     db.from("emails").select("id", { count: "exact", head: true }).eq("direction", "inbound").gte("created_at", lastMonthStart).lt("created_at", monthStart),
     db.from("leads").select("id", { count: "exact", head: true }).eq("status", "meeting_booked"),
@@ -83,7 +135,7 @@ export async function GET() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now.getTime() - i * DAY_MS);
     emailBuckets.set(dayKey(d), {
-      date: d.toLocaleDateString("en-AU", { weekday: "short" }),
+      date: d.toLocaleDateString("en-AU", { weekday: "short", timeZone: TZ }),
       sent: 0,
       replies: 0,
     });
@@ -114,6 +166,12 @@ export async function GET() {
   const wonCount = won.count || 0;
 
   return NextResponse.json({
+    today_emails_sent: emailsToday.count || 0,
+    today_leads: leadsToday.count || 0,
+    total_emails_sent: sentCount,
+    total_leads: leadCount,
+    // Retained under their original names; the dashboard's today tiles predate the
+    // today_* fields above and read the same counts.
     leads_today: leadsToday.count || 0,
     emails_sent_today: emailsToday.count || 0,
     replies_received: repliesThisMonth.count || 0,

@@ -115,6 +115,10 @@ export interface Notification {
 }
 
 export interface DashboardStats {
+  today_emails_sent: number
+  today_leads: number
+  total_emails_sent: number
+  total_leads: number
   leads_today: number
   emails_sent_today: number
   replies_received: number
