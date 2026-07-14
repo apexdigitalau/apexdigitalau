@@ -13,7 +13,8 @@ async function refreshAccessToken(refreshToken: string) {
       grant_type: 'refresh_token',
     }),
   })
-  return res.json()
+  const data = await res.json()
+  return { ok: res.ok, status: res.status, data }
 }
 
 function buildRawEmail(to: string, from: string, subject: string, body: string, inReplyTo?: string): string {
@@ -65,8 +66,8 @@ export async function POST(request: NextRequest) {
 
     // Refresh token if expired
     if (tokenExpiry && new Date(tokenExpiry) <= new Date()) {
-      const refreshed = await refreshAccessToken(refreshToken)
-      if (refreshed.access_token) {
+      const { ok, status, data: refreshed } = await refreshAccessToken(refreshToken)
+      if (ok && refreshed.access_token) {
         accessToken = refreshed.access_token
         await supabase
           .from('settings')
@@ -76,7 +77,16 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', (settings as any).id)
       } else {
-        return NextResponse.json({ error: 'Failed to refresh Gmail token' }, { status: 401 })
+        console.error('Gmail token refresh failed:', status, refreshed)
+        return NextResponse.json(
+          {
+            error: 'Failed to refresh Gmail token',
+            google_status: status,
+            google_error: refreshed?.error ?? null,
+            google_error_description: refreshed?.error_description ?? null,
+          },
+          { status: 401 }
+        )
       }
     }
 

@@ -47,7 +47,8 @@ async function refreshAccessToken(refreshToken: string) {
     }),
   })
 
-  return res.json()
+  const data = await res.json()
+  return { ok: res.ok, status: res.status, data }
 }
 
 export async function POST() {
@@ -70,8 +71,8 @@ export async function POST() {
 
     // Refresh token if expired
     if (tokenExpiry && new Date(tokenExpiry) <= new Date()) {
-      const refreshed = await refreshAccessToken(refreshToken)
-      if (refreshed.access_token) {
+      const { ok, status, data: refreshed } = await refreshAccessToken(refreshToken)
+      if (ok && refreshed.access_token) {
         accessToken = refreshed.access_token
         await supabase
           .from('settings')
@@ -81,7 +82,16 @@ export async function POST() {
           })
           .eq('id', (settings as any).id)
       } else {
-        return NextResponse.json({ error: 'Failed to refresh Gmail token. Please reconnect Gmail.' }, { status: 401 })
+        console.error('Gmail token refresh failed:', status, refreshed)
+        return NextResponse.json(
+          {
+            error: 'Failed to refresh Gmail token. Please reconnect Gmail.',
+            google_status: status,
+            google_error: refreshed?.error ?? null,
+            google_error_description: refreshed?.error_description ?? null,
+          },
+          { status: 401 }
+        )
       }
     }
 
