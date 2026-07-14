@@ -160,8 +160,12 @@ export interface Settings {
   id: string
   gmail_connected: boolean
   gmail_email: string | null
-  claude_api_key: string | null
-  openai_api_key: string | null
+  // Always null over HTTP — /api/settings redacts secrets and reports presence instead.
+  claude_api_key: null
+  openai_api_key: null
+  has_claude_key: boolean
+  has_openai_key: boolean
+  has_gmail_tokens: boolean
   n8n_webhook_url: string | null
   company_name: string
   company_logo: string | null
