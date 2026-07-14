@@ -196,7 +196,7 @@ export default function InboxPage() {
                 className={cn(
                   'px-2.5 py-1 text-xs rounded-md whitespace-nowrap transition-colors capitalize',
                   tab === t
-                    ? 'bg-[hsl(var(--primary))] text-white'
+                    ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
                     : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]'
                 )}
               >
@@ -355,7 +355,7 @@ export default function InboxPage() {
                       <button
                         onClick={handleSend}
                         disabled={!reply.trim() || sending}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-white text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
                       >
                         {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Reply className="w-3.5 h-3.5" />}
                         {sending ? 'Sending…' : 'Send Reply'}

@@ -118,7 +118,7 @@ export default function CampaignsPage() {
         title="Campaigns"
         subtitle={`${campaigns.length} campaigns`}
         actions={
-          <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+          <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
             <Plus className="w-4 h-4" /> New Campaign
           </button>
         }
@@ -154,7 +154,7 @@ export default function CampaignsPage() {
               className={cn(
                 'px-3 py-1.5 text-sm rounded-lg capitalize transition-colors',
                 filter === s
-                  ? 'bg-[hsl(var(--primary))] text-white'
+                  ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
                   : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]'
               )}
             >
@@ -245,7 +245,7 @@ export default function CampaignsPage() {
                   )}
 
                   {c.status === 'draft' && (
-                    <button className="mt-2 flex items-center gap-2 px-3 py-1.5 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+                    <button className="mt-2 flex items-center gap-2 px-3 py-1.5 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
                       <Send className="w-3.5 h-3.5" /> Launch Campaign
                     </button>
                   )}
@@ -284,7 +284,7 @@ export default function CampaignsPage() {
 
             <div className="p-5 border-t border-[hsl(var(--border))] flex gap-3">
               <button onClick={() => setCreateOpen(false)} disabled={creating} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
-              <button onClick={handleCreateCampaign} disabled={creating || !newCampaign.name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={handleCreateCampaign} disabled={creating || !newCampaign.name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Plus className="w-4 h-4" /> Create</>}
               </button>
             </div>

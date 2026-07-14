@@ -329,7 +329,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
               </div>
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setEditing(false)} disabled={savingEdit} className="flex-1 py-2 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
-                <button onClick={saveEdit} disabled={savingEdit || !editFields.company_name.trim()} className="flex-1 py-2 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                <button onClick={saveEdit} disabled={savingEdit || !editFields.company_name.trim()} className="flex-1 py-2 px-4 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                   {savingEdit ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Save</>}
                 </button>
               </div>
@@ -368,7 +368,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                   <button
                     onClick={handleAnalyzeWebsite}
                     disabled={analyzing}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50 whitespace-nowrap"
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50 whitespace-nowrap"
                   >
                     {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                     {analyzing ? 'Analyzing…' : 'Analyze Website'}
@@ -462,7 +462,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                   <button
                     onClick={handleGenerateEmail}
                     disabled={generatingEmail}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--primary))] text-white text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-70 flex-shrink-0"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-70 flex-shrink-0"
                   >
                     {generatingEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                     Generate
@@ -482,7 +482,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                   </div>
                   <p className="text-sm font-medium mb-1">No email generated yet</p>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">Claude will craft a personalised cold email using the website analysis.</p>
-                  <button onClick={handleGenerateEmail} className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-white text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors mx-auto">
+                  <button onClick={handleGenerateEmail} className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors mx-auto">
                     <Sparkles className="w-4 h-4" /> Generate Email
                   </button>
                 </div>
@@ -531,7 +531,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                     <button
                       onClick={handleSendEmail}
                       disabled={sendingEmail}
-                      className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-70"
+                      className="flex items-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-70"
                     >
                       {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                       {sendingEmail ? 'Sending…' : 'Send Email'}
@@ -558,7 +558,7 @@ export function LeadDrawer({ lead, onClose, onUpdate }: LeadDrawerProps) {
                 <button
                   onClick={handleSaveNote}
                   disabled={savingNote || !note.trim()}
-                  className="mt-2 flex items-center gap-2 px-3 py-2 bg-[hsl(var(--primary))] text-white text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
+                  className="mt-2 flex items-center gap-2 px-3 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
                 >
                   {savingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
                   Save Note

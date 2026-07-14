@@ -146,7 +146,7 @@ export default function AssistantPage() {
             <button
               onClick={handleRun}
               disabled={running || !instruction.trim()}
-              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
+              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
             >
               {running ? <><Loader2 className="w-4 h-4 animate-spin" /> Working…</> : <><Sparkles className="w-4 h-4" /> Ask AI</>}
             </button>
@@ -231,7 +231,7 @@ export default function AssistantPage() {
                           <button
                             onClick={() => handleSend(d)}
                             disabled={sendingId === d.id || discardingId === d.id}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50"
                           >
                             {sendingId === d.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</> : <><Send className="w-4 h-4" /> Send this email</>}
                           </button>

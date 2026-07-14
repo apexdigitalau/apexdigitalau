@@ -103,7 +103,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 // buttons doesn't cover them.
                 "flex items-center gap-2.5 px-3 py-2 min-h-11 rounded-md text-sm transition-all duration-150",
                 active
-                  ? "bg-[hsl(var(--primary))] text-white font-medium shadow-sm"
+                  ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-medium shadow-sm"
                   : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]"
               )}
             >
@@ -112,7 +112,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               {item.name === "Inbox" && notifCount > 0 && (
                 <span className={cn(
                   "ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                  active ? "bg-white/20 text-white" : "bg-[hsl(var(--primary))] text-white"
+                  // On the active row the pill sits on orange, so it darkens rather than lightens.
+                  active ? "bg-black/15 text-[hsl(var(--primary-foreground))]" : "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
                 )}>
                   {notifCount}
                 </span>
@@ -126,7 +127,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="p-3 border-t border-[hsl(var(--border))] space-y-1">
         <ThemeToggleButton />
         <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-[hsl(var(--accent))] transition-colors group">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="w-7 h-7 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center text-[hsl(var(--primary-foreground))] text-xs font-bold shrink-0">
             A
           </div>
           <div className="flex-1 text-left min-w-0">

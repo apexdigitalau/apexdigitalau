@@ -6,8 +6,11 @@
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
-    --primary: 220 90% 56%;
-    --primary-foreground: 0 0% 100%;
+    /* Apex logo orange (#F08020). White on this orange is only 2.69:1, so the
+       foreground is the brand ink (#141210, 6.95:1) — the same black-on-orange
+       pairing the designer used for the orange app icon. */
+    --primary: 27.7 87.4% 53.3%;
+    --primary-foreground: 30 11% 7%;
     --secondary: 220 14% 96%;
     --secondary-foreground: 224 71% 4%;
     --muted: 220 14% 96%;
@@ -17,7 +20,7 @@
     --destructive: 0 84% 60%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 220 90% 56%;
+    --ring: 27.7 87.4% 53.3%;
     --radius: 0.5rem;
   }
 
@@ -26,8 +29,9 @@
     --foreground: 213 31% 91%;
     --card: 222 47% 7%;
     --card-foreground: 213 31% 91%;
-    --primary: 220 90% 56%;
-    --primary-foreground: 0 0% 100%;
+    /* Same orange in both themes: it's a brand colour, not a surface colour. */
+    --primary: 27.7 87.4% 53.3%;
+    --primary-foreground: 30 11% 7%;
     --secondary: 222 47% 11%;
     --secondary-foreground: 213 31% 91%;
     --muted: 223 47% 11%;
@@ -37,7 +41,7 @@
     --destructive: 0 63% 50%;
     --border: 222 47% 14%;
     --input: 222 47% 14%;
-    --ring: 220 90% 56%;
+    --ring: 27.7 87.4% 53.3%;
   }
 
   * { border-color: hsl(var(--border)); }

@@ -121,7 +121,7 @@ export default function ClientsPage() {
         title="Clients"
         subtitle={`${clients.length} total · ${activeCount} active`}
         actions={
-          <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+          <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
             <Plus className="w-4 h-4" /> Add Client
           </button>
         }
@@ -167,7 +167,7 @@ export default function ClientsPage() {
                 className={cn(
                   'px-3 py-1.5 text-sm rounded-lg capitalize transition-colors',
                   filter === s
-                    ? 'bg-[hsl(var(--primary))] text-white'
+                    ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
                     : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]'
                 )}
               >
@@ -321,7 +321,7 @@ export default function ClientsPage() {
 
             <div className="p-5 border-t border-[hsl(var(--border))] flex gap-3">
               <button onClick={() => setAddOpen(false)} disabled={adding} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
-              <button onClick={handleAddClient} disabled={adding || !newClient.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={handleAddClient} disabled={adding || !newClient.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {adding ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><Plus className="w-4 h-4" /> Add Client</>}
               </button>
             </div>

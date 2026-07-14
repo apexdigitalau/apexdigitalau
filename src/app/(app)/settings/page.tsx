@@ -221,7 +221,7 @@ export default function SettingsPage() {
               className={cn(
                 "px-3 py-2 text-sm rounded-md whitespace-nowrap shrink-0 transition-colors",
                 activeSection === s.id
-                  ? "bg-[hsl(var(--primary))] text-white font-medium"
+                  ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-medium"
                   : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"
               )}
             >
@@ -238,7 +238,7 @@ export default function SettingsPage() {
               className={cn(
                 "w-full text-left text-sm px-3 py-2 rounded-md transition-colors",
                 activeSection === s.id
-                  ? "bg-[hsl(var(--primary))] text-white font-medium"
+                  ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-medium"
                   : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]"
               )}
             >
@@ -273,7 +273,7 @@ export default function SettingsPage() {
                       <CheckCircle className="w-3.5 h-3.5" />Connected{gmailEmail ? ` (${gmailEmail})` : ''}
                     </span>
                   ) : (
-                    <a href="/api/auth/gmail" className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90 font-medium">
+                    <a href="/api/auth/gmail" className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:opacity-90 font-medium">
                       Connect Gmail
                     </a>
                   )}
@@ -429,7 +429,7 @@ export default function SettingsPage() {
                   <h2 className="text-base font-semibold text-[hsl(var(--foreground))] mb-1">Team Members</h2>
                   <p className="text-sm text-[hsl(var(--muted-foreground))]">Manage access to the CRM</p>
                 </div>
-                <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90 font-medium">
+                <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:opacity-90 font-medium">
                   <Users className="w-3.5 h-3.5" />
                   Invite Member
                 </button>
@@ -438,7 +438,7 @@ export default function SettingsPage() {
                 {[{ name: "Admin", email: "apex@apexdigital.com.au", role: "Admin" }].map(member => (
                   <div key={member.email} className="flex items-center justify-between px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white">
+                      <div className="w-8 h-8 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center text-xs font-bold text-[hsl(var(--primary-foreground))]">
                         {member.name[0]}
                       </div>
                       <div>
@@ -460,7 +460,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={!loaded || saving}
-                className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-[hsl(var(--primary))] text-white hover:opacity-90 transition-opacity font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-md bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:opacity-90 transition-opacity font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? "Saving…" : "Save Changes"}

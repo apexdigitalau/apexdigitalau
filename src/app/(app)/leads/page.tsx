@@ -265,7 +265,7 @@ export default function LeadsPage() {
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               {importing ? 'Importing…' : 'Import CSV'}
             </button>
-            <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+            <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
               <Plus className="w-4 h-4" /> Add Lead
             </button>
           </div>
@@ -306,7 +306,7 @@ export default function LeadsPage() {
             onClick={() => setStatusFilter('all')}
             className={cn(
               'px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors',
-              statusFilter === 'all' ? 'bg-[hsl(var(--primary))] text-white' : 'hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]'
+              statusFilter === 'all' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]'
             )}
           >
             All <span className="ml-1 opacity-70">{leads.length}</span>
@@ -319,7 +319,7 @@ export default function LeadsPage() {
                 onClick={() => setStatusFilter(s)}
                 className={cn(
                   'px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors',
-                  statusFilter === s ? 'bg-[hsl(var(--primary))] text-white' : 'hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]'
+                  statusFilter === s ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'hover:bg-[hsl(var(--accent))] text-[hsl(var(--muted-foreground))]'
                 )}
               >
                 {cfg.label} {statusCounts[s] ? <span className="ml-1 opacity-70">{statusCounts[s]}</span> : null}
@@ -332,7 +332,7 @@ export default function LeadsPage() {
         {selected.size > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg bg-[hsl(var(--primary)/0.08)] border border-[hsl(var(--primary)/0.2)]">
             <span className="text-sm font-medium text-[hsl(var(--primary))] w-full sm:w-auto">{selected.size} selected</span>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:opacity-90 transition-opacity">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:opacity-90 transition-opacity">
               <Mail className="w-3.5 h-3.5" /> Bulk Email
             </button>
             <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors">
@@ -540,7 +540,7 @@ export default function LeadsPage() {
               <button
                 onClick={handleFindLeads}
                 disabled={finding || !findIndustry.trim() || !findLocation.trim()}
-                className="w-full py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-2.5 px-4 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {finding ? <><Loader2 className="w-4 h-4 animate-spin" /> Searching…</> : <><Search className="w-4 h-4" /> Find Leads</>}
               </button>
@@ -603,7 +603,7 @@ export default function LeadsPage() {
 
             <div className="p-5 pb-safe border-t border-[hsl(var(--border))] flex flex-col-reverse sm:flex-row gap-3 shrink-0">
               <button onClick={() => setAddOpen(false)} disabled={adding} className="flex-1 py-2.5 px-4 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors disabled:opacity-50">Cancel</button>
-              <button onClick={handleAddLead} disabled={adding || !newLead.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-white text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={handleAddLead} disabled={adding || !newLead.company_name.trim()} className="flex-1 py-2.5 px-4 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-medium rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {adding ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><Plus className="w-4 h-4" /> Add Lead</>}
               </button>
             </div>

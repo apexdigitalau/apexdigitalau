@@ -140,7 +140,7 @@ function AnalysisCard({ analysis, expanded, onToggle, onEmail }: {
           <div className="flex items-center gap-2 pt-2">
             <button
               onClick={e => { e.stopPropagation(); onEmail() }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--primary))] text-white text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5" /> Generate Email
             </button>
@@ -239,7 +239,7 @@ export default function WebsiteAnalysisPage() {
         title="Website Analysis"
         subtitle={`${analyses.length} analysed`}
         actions={
-          <button onClick={openPicker} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
+          <button onClick={openPicker} className="flex items-center gap-2 px-3 py-2 text-sm bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors">
             <Globe className="w-4 h-4" /> Analyse New Site
           </button>
         }
@@ -347,7 +347,7 @@ export default function WebsiteAnalysisPage() {
                       <button
                         onClick={() => analyzeLeadFromPicker(l.id)}
                         disabled={analyzingId !== null}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[hsl(var(--primary))] text-white rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50 whitespace-nowrap"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:bg-[hsl(var(--primary)/0.9)] transition-colors disabled:opacity-50 whitespace-nowrap"
                       >
                         {analyzingId === l.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analysing…</> : <><Sparkles className="w-3.5 h-3.5" /> Analyse</>}
                       </button>
