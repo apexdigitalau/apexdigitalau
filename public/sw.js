@@ -6,7 +6,9 @@
  * stale leads or serve one session's data to another.
  */
 
-const CACHE = 'apex-crm-v1';
+// Bumped to v2 to evict the pre-branding icons: the Apex icons reuse the same
+// filenames, so installed clients would otherwise serve the old ones from cache.
+const CACHE = 'apex-crm-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Only assets that are safe to serve to anyone.

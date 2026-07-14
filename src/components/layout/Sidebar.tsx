@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BRAND } from "@/lib/brand";
@@ -14,7 +15,6 @@ import {
   Settings,
   Search,
   ChevronDown,
-  Zap,
   Sun,
   Moon,
   BookOpen,
@@ -58,15 +58,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[hsl(var(--border))]">
-        <div className="w-7 h-7 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center">
-          <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-[hsl(var(--foreground))] leading-none">{BRAND.companyName}</p>
-          <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">CRM Platform</p>
-        </div>
+      {/* Logo — the lockup already carries the company name, so no text label beside it */}
+      <div className="flex items-center px-5 py-4 border-b border-[hsl(var(--border))]">
+        <Image
+          src="/logo.png"
+          alt={BRAND.companyFullName}
+          width={862}
+          height={336}
+          priority
+          className="logo-on-light h-8 w-auto"
+        />
+        <Image
+          src="/logo-white.png"
+          alt={BRAND.companyFullName}
+          width={862}
+          height={336}
+          priority
+          className="logo-on-dark h-8 w-auto"
+        />
       </div>
 
       {/* Search */}

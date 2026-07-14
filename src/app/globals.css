@@ -96,3 +96,10 @@
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* The brand lockup ships in two inks, one per theme background. Swapping them here
+   rather than with Tailwind's `dark:` keys off the .dark class ThemeProvider toggles;
+   `dark:` in Tailwind v4 follows the OS preference, which the in-app toggle can contradict. */
+.logo-on-dark { display: none; }
+.dark .logo-on-dark { display: block; }
+.dark .logo-on-light { display: none; }

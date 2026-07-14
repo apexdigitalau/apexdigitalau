@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
-import { Zap, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -33,11 +34,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))] px-4">
       <div className="w-full max-w-sm">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-lg bg-[hsl(var(--primary))] flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white fill-white" />
-          </div>
-          <span className="text-xl font-semibold text-[hsl(var(--foreground))]">{BRAND.companyName}</span>
+        <div className="flex items-center justify-center mb-8">
+          <Image
+            src="/logo.png"
+            alt={BRAND.companyFullName}
+            width={862}
+            height={336}
+            priority
+            className="logo-on-light h-11 w-auto"
+          />
+          <Image
+            src="/logo-white.png"
+            alt={BRAND.companyFullName}
+            width={862}
+            height={336}
+            priority
+            className="logo-on-dark h-11 w-auto"
+          />
         </div>
 
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-8 shadow-sm">
