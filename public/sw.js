@@ -1,70 +1,55 @@
-/* Apex CRM service worker.
+/* Apex CRM — kill-switch service worker.
  *
- * Deliberately conservative. This is an authenticated CRM, so the cache is
- * limited to static, non-sensitive assets. API responses, auth routes and
- * anything non-GET are always served from the network so we can never show
- * stale leads or serve one session's data to another.
+ * A previous service worker cached hashed JS bundles with a cache-first
+ * strategy. On iOS Safari / installed PWAs that left devices pinned to a stale
+ * app shell, which broke the AI email generation flow (it worked in a private
+ * tab precisely because no service worker was active there).
+ *
+ * This version does nothing but self-destruct: on activation it deletes every
+ * cache, unregisters itself, and reloads any open clients so they reload the
+ * live app from the network. Because it unregisters, it only runs once per
+ * device — there is no reload loop and no lingering worker afterwards.
+ *
+ * Keep this file byte-different from the previously deployed sw.js so browsers
+ * detect the update and install it.
  */
 
-// Bumped to v2 to evict the pre-branding icons: the Apex icons reuse the same
-// filenames, so installed clients would otherwise serve the old ones from cache.
-const CACHE = 'apex-crm-v2';
-const OFFLINE_URL = '/offline.html';
-
-// Only assets that are safe to serve to anyone.
-const PRECACHE = [OFFLINE_URL, '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then(cache => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener('install', () => {
+  // Take over immediately instead of waiting for existing tabs to close.
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches
-      .keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
+    (async () => {
+      // 1. Nuke every cache this origin ever created.
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+      } catch (err) {
+        // Best effort — keep going even if a delete fails.
+      }
 
-function isPrivate(url) {
-  return url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/');
-}
+      // 2. Unregister so no service worker controls this origin going forward.
+      try {
+        await self.registration.unregister();
+      } catch (err) {
+        /* no-op */
+      }
 
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Never touch non-GET, cross-origin, API or auth traffic.
-  if (request.method !== 'GET') return;
-  if (url.origin !== self.location.origin) return;
-  if (isPrivate(url)) return;
-
-  // Page loads: hit the network, fall back to an offline page so a dead
-  // connection doesn't show the browser's error page inside the installed app.
-  if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
-    return;
-  }
-
-  // Static assets: serve from cache, refresh in the background.
-  event.respondWith(
-    caches.match(request).then(cached => {
-      const network = fetch(request)
-        .then(response => {
-          if (response.ok && response.type === 'basic') {
-            const copy = response.clone();
-            caches.open(CACHE).then(cache => cache.put(request, copy));
+      // 3. Reload every open client so they drop the stale controlled page and
+      //    fetch fresh HTML + bundles straight from the network.
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      await Promise.all(
+        clients.map(client => {
+          if ('navigate' in client) {
+            return client.navigate(client.url).catch(() => {});
           }
-          return response;
+          return Promise.resolve();
         })
-        .catch(() => cached);
-      return cached || network;
-    })
+      );
+    })()
   );
 });
+
+// Never intercept fetches — always go straight to the network.
