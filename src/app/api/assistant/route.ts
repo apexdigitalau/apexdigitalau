@@ -2,31 +2,95 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
 import { findEmailForWebsite } from '@/lib/email-finder'
+import {
+  UpstreamError,
+  describeUpstream,
+  failSupabase,
+  failure,
+  failWith,
+} from '@/lib/api-error'
 
 export const maxDuration = 300
 
-async function callClaude(system: string, user: string, maxTokens = 2000) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY!,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content: user }],
-    }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error?.message || 'AI request failed')
-  return data.content?.[0]?.text || ''
+/** Steps a request moves through, reported back as `stage` when one fails. */
+type Stage = 'parse' | 'scrape' | 'draft' | 'save'
+
+/**
+ * `stage` is threaded in so an Anthropic failure says whether it happened while
+ * parsing the instruction or while writing the drafts — the two call sites send
+ * very different payloads and fail for different reasons.
+ */
+async function callClaude(stage: Stage, system: string, user: string, maxTokens = 2000) {
+  let res: Response
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY ?? '',
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: user }],
+      }),
+    })
+  } catch (err) {
+    // Network-level failure: never reached Anthropic, so there is no status.
+    throw new UpstreamError({
+      message: 'Could not reach the AI service',
+      stage,
+      upstreamError: err instanceof Error ? err.message : String(err),
+    })
+  }
+
+  // Read as text first: an error response is not guaranteed to be JSON (a
+  // gateway or proxy can return HTML), and .json() would throw over the top of
+  // the real error.
+  const raw = await res.text()
+  let data: any = null
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    data = null
+  }
+
+  if (!res.ok) {
+    throw new UpstreamError({
+      message: 'The AI service rejected the request',
+      stage,
+      upstreamStatus: res.status,
+      upstreamError: describeUpstream(data ?? raw),
+      // Surface auth/rate-limit as-is; everything else is a 500 to our client.
+      httpStatus: res.status === 401 || res.status === 429 ? res.status : 500,
+    })
+  }
+
+  const text = data?.content?.[0]?.text
+  if (typeof text !== 'string' || !text) {
+    throw new UpstreamError({
+      message: 'The AI service returned an empty response',
+      stage,
+      upstreamStatus: res.status,
+      upstreamError: describeUpstream(data ?? raw),
+    })
+  }
+  return text
 }
 
-function parseJson(text: string) {
-  return JSON.parse(text.replace(/```json|```/g, '').trim())
+/** Parse the model's JSON, reporting the raw text when it isn't valid JSON. */
+function parseJson(stage: Stage, text: string) {
+  try {
+    return JSON.parse(text.replace(/```json|```/g, '').trim())
+  } catch (err) {
+    throw new UpstreamError({
+      message: 'The AI returned a malformed response',
+      stage,
+      upstreamError: `${err instanceof Error ? err.message : String(err)} — received: ${text.slice(0, 300)}`,
+    })
+  }
 }
 
 // Lead statuses that mean outreach has already happened — never draft for these,
@@ -46,7 +110,7 @@ export async function POST(request: NextRequest) {
   try {
     const { instruction } = await request.json()
     if (!instruction?.trim()) {
-      return NextResponse.json({ error: 'No instruction given' }, { status: 400 })
+      return failWith({ error: 'No instruction given', stage: 'parse', status: 400 })
     }
 
     // STEP 1 — parse the instruction into a structured task
@@ -63,7 +127,7 @@ Return JSON in exactly this format:
 
 If the instruction is not about drafting/writing emails to leads, set action to "unsupported".`
 
-    const parsed = parseJson(await callClaude(parseSystem, parsePrompt, 400))
+    const parsed = parseJson('parse', await callClaude('parse', parseSystem, parsePrompt, 400))
 
     if (parsed.action !== 'draft_emails') {
       return NextResponse.json({
@@ -89,7 +153,7 @@ If the instruction is not about drafting/writing emails to leads, set action to 
 
     const { data: allLeads, error: leadsErr } = await query
     if (leadsErr) {
-      return NextResponse.json({ error: leadsErr.message }, { status: 500 })
+      return failSupabase('scrape', leadsErr, 'Could not load leads')
     }
 
     if (!allLeads || allLeads.length === 0) {
@@ -108,7 +172,7 @@ If the instruction is not about drafting/writing emails to leads, set action to 
       .in('lead_id', allLeads.map((l: any) => l.id))
 
     if (outboundErr) {
-      return NextResponse.json({ error: outboundErr.message }, { status: 500 })
+      return failSupabase('scrape', outboundErr, 'Could not check which leads were already contacted')
     }
 
     const sentLeadIds = new Set<string>()
@@ -212,7 +276,7 @@ Rules for every email:
 Return ONLY valid JSON in exactly this format:
 {"drafts": [{"lead_id": "<id>", "subject": "...", "body": "..."}]}`
 
-    const draftResult = parseJson(await callClaude(draftSystem, draftPrompt, 8000))
+    const draftResult = parseJson('draft', await callClaude('draft', draftSystem, draftPrompt, 8000))
     const drafts = Array.isArray(draftResult.drafts) ? draftResult.drafts : []
 
     if (drafts.length === 0) {
@@ -247,7 +311,7 @@ Return ONLY valid JSON in exactly this format:
       .select('id')
 
     if (insertErr) {
-      return NextResponse.json({ error: insertErr.message }, { status: 500 })
+      return failSupabase('save', insertErr, 'Drafts were written but could not be saved')
     }
 
     return NextResponse.json({
@@ -256,8 +320,8 @@ Return ONLY valid JSON in exactly this format:
       skipped_contacted: skippedContacted,
       skipped_drafted: skippedDrafted,
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Assistant error:', err)
-    return NextResponse.json({ error: err.message || 'Assistant failed' }, { status: 500 })
+    return failure(err, 'parse', 'Assistant failed')
   }
 }

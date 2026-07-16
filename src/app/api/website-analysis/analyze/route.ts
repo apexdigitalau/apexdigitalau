@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
+import { describeUpstream, failSupabase, failure, failWith } from '@/lib/api-error'
 
 function stripHtml(html: string): string {
   // Remove scripts and styles
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     const { lead_id } = await request.json()
 
     if (!lead_id) {
-      return NextResponse.json({ error: 'lead_id is required' }, { status: 400 })
+      return failWith({ error: 'lead_id is required', stage: 'load', status: 400 })
     }
 
     const supabase = getSupabaseAdmin()
@@ -30,12 +31,21 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (leadErr || !lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+      return failWith({
+        error: 'Lead not found',
+        stage: 'load',
+        upstreamError: describeUpstream(leadErr),
+        status: 404,
+      })
     }
 
     const website = (lead as any).website
     if (!website) {
-      return NextResponse.json({ error: 'This lead has no website to analyze' }, { status: 400 })
+      return failWith({
+        error: 'This lead has no website to analyze',
+        stage: 'load',
+        status: 400,
+      })
     }
 
     // Normalise URL
@@ -109,21 +119,40 @@ Return ONLY valid JSON in exactly this format (no markdown, no backticks):
       }),
     })
 
-    const aiData = await aiRes.json()
-
-    if (!aiRes.ok) {
-      console.error('Anthropic API error:', aiData)
-      return NextResponse.json({ error: `AI analysis failed: ${aiData.error?.message || aiRes.status}` }, { status: 500 })
+    // Read as text first — an error response is not guaranteed to be JSON, and
+    // .json() would throw over the top of the real upstream error.
+    const aiRaw = await aiRes.text()
+    let aiData: any = null
+    try {
+      aiData = JSON.parse(aiRaw)
+    } catch {
+      aiData = null
     }
 
-    const text = aiData.content?.[0]?.text || ''
+    if (!aiRes.ok) {
+      console.error('Anthropic API error:', aiRes.status, aiRaw.slice(0, 500))
+      return failWith({
+        error: 'The AI service rejected the analysis request',
+        stage: 'analyze',
+        upstreamStatus: aiRes.status,
+        upstreamError: describeUpstream(aiData ?? aiRaw),
+        status: aiRes.status === 401 || aiRes.status === 429 ? aiRes.status : 500,
+      })
+    }
+
+    const text = aiData?.content?.[0]?.text || ''
 
     let analysis: any
     try {
       analysis = JSON.parse(text.replace(/```json|```/g, '').trim())
-    } catch {
-      console.error('Failed to parse AI analysis:', text)
-      return NextResponse.json({ error: 'Failed to parse AI analysis' }, { status: 500 })
+    } catch (err) {
+      console.error('Failed to parse AI analysis:', text.slice(0, 500))
+      return failWith({
+        error: 'The AI returned a malformed analysis',
+        stage: 'analyze',
+        upstreamStatus: aiRes.status,
+        upstreamError: `${err instanceof Error ? err.message : String(err)} — received: ${String(text).slice(0, 300)}`,
+      })
     }
 
     // Remove any existing analysis for this lead, then insert the fresh one
@@ -150,12 +179,12 @@ Return ONLY valid JSON in exactly this format (no markdown, no backticks):
 
     if (saveErr) {
       console.error('Save analysis error:', saveErr)
-      return NextResponse.json({ error: saveErr.message }, { status: 500 })
+      return failSupabase('save', saveErr, 'Analysis ran but could not be saved')
     }
 
     return NextResponse.json({ success: true, analysis: saved })
   } catch (err) {
     console.error('Analyze error:', err)
-    return NextResponse.json({ error: 'Server error during analysis' }, { status: 500 })
+    return failure(err, 'analyze', 'Server error during analysis')
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
+import { describeUpstream, failure, failWith } from '@/lib/api-error'
 
 async function refreshAccessToken(refreshToken: string) {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     const { to, subject, body, lead_id } = await request.json()
 
     if (!to || !body) {
-      return NextResponse.json({ error: 'Missing recipient or body' }, { status: 400 })
+      return failWith({ error: 'Missing recipient or body', stage: 'send', status: 400 })
     }
 
     const supabase = getSupabaseAdmin()
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!settings || !(settings as any).gmail_connected) {
-      return NextResponse.json({ error: 'Gmail not connected' }, { status: 400 })
+      return failWith({ error: 'Gmail not connected', stage: 'auth', status: 400 })
     }
 
     let accessToken = (settings as any).gmail_access_token
@@ -78,15 +79,13 @@ export async function POST(request: NextRequest) {
           .eq('id', (settings as any).id)
       } else {
         console.error('Gmail token refresh failed:', status, refreshed)
-        return NextResponse.json(
-          {
-            error: 'Failed to refresh Gmail token',
-            google_status: status,
-            google_error: refreshed?.error ?? null,
-            google_error_description: refreshed?.error_description ?? null,
-          },
-          { status: 401 }
-        )
+        return failWith({
+          error: 'Failed to refresh Gmail token. Please reconnect Gmail.',
+          stage: 'auth',
+          upstreamStatus: status,
+          upstreamError: describeUpstream(refreshed),
+          status: 401,
+        })
       }
     }
 
@@ -105,11 +104,23 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    const sendData = await sendRes.json()
+    const sendRaw = await sendRes.text()
+    let sendData: any = null
+    try {
+      sendData = JSON.parse(sendRaw)
+    } catch {
+      sendData = null
+    }
 
     if (!sendRes.ok) {
-      console.error('Gmail send error:', sendData)
-      return NextResponse.json({ error: `Gmail send failed: ${sendData.error?.message || sendRes.status}` }, { status: 500 })
+      console.error('Gmail send error:', sendRes.status, sendRaw.slice(0, 500))
+      return failWith({
+        error: 'Gmail rejected the message',
+        stage: 'send',
+        upstreamStatus: sendRes.status,
+        upstreamError: describeUpstream(sendData ?? sendRaw),
+        status: sendRes.status === 401 || sendRes.status === 429 ? sendRes.status : 500,
+      })
     }
 
     // Store the sent email in our database
@@ -122,7 +133,7 @@ export async function POST(request: NextRequest) {
       subject: finalSubject,
       body,
       status: 'read',
-      gmail_message_id: sendData.id,
+      gmail_message_id: sendData?.id ?? null,
       created_at: new Date().toISOString(),
     }])
 
@@ -134,9 +145,9 @@ export async function POST(request: NextRequest) {
         .eq('id', lead_id)
     }
 
-    return NextResponse.json({ success: true, message_id: sendData.id })
+    return NextResponse.json({ success: true, message_id: sendData?.id ?? null })
   } catch (err) {
     console.error('Send email error:', err)
-    return NextResponse.json({ error: 'Server error sending email' }, { status: 500 })
+    return failure(err, 'send', 'Server error sending email')
   }
 }

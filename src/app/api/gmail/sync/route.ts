@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { describeUpstream, failure, failWith } from '@/lib/api-error'
 
 interface GmailMessage {
   id: string
@@ -62,7 +63,7 @@ export async function POST() {
       .single()
 
     if (!settings || !(settings as any).gmail_connected) {
-      return NextResponse.json({ error: 'Gmail not connected' }, { status: 400 })
+      return failWith({ error: 'Gmail not connected', stage: 'auth', status: 400 })
     }
 
     let accessToken = (settings as any).gmail_access_token
@@ -83,15 +84,13 @@ export async function POST() {
           .eq('id', (settings as any).id)
       } else {
         console.error('Gmail token refresh failed:', status, refreshed)
-        return NextResponse.json(
-          {
-            error: 'Failed to refresh Gmail token. Please reconnect Gmail.',
-            google_status: status,
-            google_error: refreshed?.error ?? null,
-            google_error_description: refreshed?.error_description ?? null,
-          },
-          { status: 401 }
-        )
+        return failWith({
+          error: 'Failed to refresh Gmail token. Please reconnect Gmail.',
+          stage: 'auth',
+          upstreamStatus: status,
+          upstreamError: describeUpstream(refreshed),
+          status: 401,
+        })
       }
     }
 
@@ -100,14 +99,26 @@ export async function POST() {
       'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&q=in:inbox',
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
-    const listData = await listRes.json()
-
-    if (!listRes.ok) {
-      console.error('Gmail list API error:', listData)
-      return NextResponse.json({ error: `Gmail API error: ${listData.error?.message || listRes.status}` }, { status: 500 })
+    const listRaw = await listRes.text()
+    let listData: any = null
+    try {
+      listData = JSON.parse(listRaw)
+    } catch {
+      listData = null
     }
 
-    const messages = listData.messages || []
+    if (!listRes.ok) {
+      console.error('Gmail list API error:', listRes.status, listRaw.slice(0, 500))
+      return failWith({
+        error: 'Gmail rejected the inbox request',
+        stage: 'fetch',
+        upstreamStatus: listRes.status,
+        upstreamError: describeUpstream(listData ?? listRaw),
+        status: listRes.status === 401 || listRes.status === 429 ? listRes.status : 500,
+      })
+    }
+
+    const messages = listData?.messages || []
 
     // Get existing gmail_message_ids to avoid duplicates
     const { data: existingEmails } = await supabase
@@ -203,6 +214,6 @@ export async function POST() {
     return NextResponse.json({ synced: syncedCount, deleted: deletedCount })
   } catch (err) {
     console.error('Gmail sync error:', err)
-    return NextResponse.json({ error: 'Server error during sync' }, { status: 500 })
+    return failure(err, 'fetch', 'Server error during sync')
   }
 }

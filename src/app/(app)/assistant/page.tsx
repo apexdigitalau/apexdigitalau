@@ -16,6 +16,34 @@ interface Draft {
   leads?: { company_name: string; industry: string | null; website: string | null } | null
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  parse: 'understanding your instruction',
+  scrape: 'looking up leads and their email addresses',
+  draft: 'writing the emails',
+  save: 'saving the drafts',
+}
+
+/**
+ * Render the structured error body from /api/assistant. The route reports which
+ * stage failed and what the upstream service actually said, so show both — a
+ * bare "Error: ..." previously made an Anthropic 401, a Supabase failure and a
+ * malformed AI response all look identical.
+ */
+function formatError(data: any): string {
+  const headline = data?.error || 'Something went wrong'
+  const parts: string[] = []
+
+  const stage = STAGE_LABELS[data?.stage] ?? data?.stage
+  parts.push(stage ? `${headline} — failed while ${stage}.` : `${headline}.`)
+
+  if (data?.upstream_error) {
+    const status = data.upstream_status ? ` (HTTP ${data.upstream_status})` : ''
+    parts.push(`Service said${status}: ${data.upstream_error}`)
+  }
+
+  return parts.join(' ')
+}
+
 export default function AssistantPage() {
   const [instruction, setInstruction] = useState('')
   const [running, setRunning] = useState(false)
@@ -56,7 +84,14 @@ export default function AssistantPage() {
       try {
         data = JSON.parse(raw)
       } catch {
-        setMessage('The request took too long — try asking for fewer emails at once.')
+        // 504/408 is the one non-JSON case we can name confidently; anything
+        // else that isn't JSON is a genuine unknown, so say so rather than
+        // guessing at a cause.
+        setMessage(
+          res.status === 504 || res.status === 408
+            ? 'The request took too long — try asking for fewer emails at once.'
+            : 'Something went wrong — check logs.'
+        )
         return
       }
       if (res.ok) {
@@ -66,7 +101,7 @@ export default function AssistantPage() {
           await loadDrafts()
         }
       } else {
-        setMessage('Error: ' + (data.error || 'Something went wrong'))
+        setMessage(formatError(data))
       }
     } catch (err) {
       setMessage('Error: ' + String(err))
