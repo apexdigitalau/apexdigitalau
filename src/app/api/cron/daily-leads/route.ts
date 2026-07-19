@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getRotationForDay } from '@/lib/lead-rotation'
+import { scrapeEmailsForLeads } from '@/lib/email-finder'
+
+// This job runs on Vercel Cron. Keep it inside the 60s serverless budget:
+// Places paging (~10-15s) + email scraping (capped, see MAX_EMAIL_SCRAPES) +
+// a bounded number of website analyses.
+export const maxDuration = 60
 
 interface PlaceResult {
   id: string
@@ -15,6 +21,7 @@ interface PlaceResult {
 // How many leads to pull per day, and how many of them to auto-analyze.
 const DAILY_LEAD_TARGET = 50
 const MAX_ANALYSES_PER_RUN = 15  // keep AI cost/time bounded per run
+const MAX_EMAIL_SCRAPES = 25     // cap email lookups per run to stay under the 60s budget
 
 function daysSinceEpoch(): number {
   return Math.floor(Date.now() / (1000 * 60 * 60 * 24))
@@ -123,6 +130,10 @@ export async function GET(request: NextRequest) {
       insertedLeads = inserted ?? []
     }
 
+    // Try to scrape a contact email from each new lead's website, in parallel.
+    // Capped so the lookups fit the serverless budget; skipped ones are logged.
+    const scrape = await scrapeEmailsForLeads(supabase, insertedLeads, { maxTotal: MAX_EMAIL_SCRAPES })
+
     // Auto-analyze a subset of the new leads that have websites
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
     const toAnalyze = insertedLeads.filter(l => l.website).slice(0, MAX_ANALYSES_PER_RUN)
@@ -148,6 +159,9 @@ export async function GET(request: NextRequest) {
       search: query,
       found: collectedLeads.length,
       inserted: insertedLeads.length,
+      emails_found: scrape.found,
+      emails_scanned: scrape.scanned,
+      emails_skipped: scrape.skipped,
       analyzed,
     })
   } catch (err) {

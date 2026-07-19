@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { scrapeEmailsForLeads } from '@/lib/email-finder'
+
+export const maxDuration = 60
+
+// Cap email lookups per request so a big "find 60" stays inside the 60s budget.
+// Any leads beyond the cap keep has_contact_email=false and can be picked up by
+// the "Find Missing Emails" button.
+const MAX_EMAIL_SCRAPES = 25
 
 interface PlaceResult {
   id: string
@@ -110,22 +118,29 @@ export async function POST(request: NextRequest) {
     }
 
     let inserted = 0
+    let insertedLeads: any[] = []
     if (collectedLeads.length > 0) {
       const { data: insertedData, error } = await supabase
         .from('leads')
         .insert(collectedLeads)
-        .select('id')
+        .select('id, website, company_name')
 
       if (error) {
         console.error('Insert error:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
-      inserted = insertedData?.length ?? 0
+      insertedLeads = insertedData ?? []
+      inserted = insertedLeads.length
     }
+
+    // Scrape contact emails for the new leads in parallel (capped for the budget).
+    const scrape = await scrapeEmailsForLeads(supabase, insertedLeads, { maxTotal: MAX_EMAIL_SCRAPES })
 
     return NextResponse.json({
       found: collectedLeads.length,
       inserted,
+      emails_found: scrape.found,
+      emails_skipped: scrape.skipped,
     })
   } catch (err) {
     console.error('Find leads error:', err)

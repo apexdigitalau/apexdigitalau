@@ -38,6 +38,8 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all')
+  // Default ON so the table mostly shows actionable leads (ones we can email).
+  const [hasEmailOnly, setHasEmailOnly] = useState(true)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sortField, setSortField] = useState<SortField>('date_added')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -82,15 +84,16 @@ export default function LeadsPage() {
     return () => clearTimeout(t)
   }, [fetchLeads])
 
-  // Client-side sort only (data already filtered from API)
+  // Client-side "has email" filter + sort (status/search already applied by API)
   const sorted = useMemo(() => {
-    return [...leads].sort((a, b) => {
+    const base = hasEmailOnly ? leads.filter(l => l.has_contact_email) : leads
+    return [...base].sort((a, b) => {
       const av = a[sortField] ?? ''
       const bv = b[sortField] ?? ''
       const cmp = av < bv ? -1 : av > bv ? 1 : 0
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [leads, sortField, sortDir])
+  }, [leads, sortField, sortDir, hasEmailOnly])
 
   function handleSort(field: SortField) {
     if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -295,6 +298,18 @@ export default function LeadsPage() {
               className="w-full pl-9 pr-3 py-2 text-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
             />
           </div>
+          <button
+            onClick={() => setHasEmailOnly(v => !v)}
+            title="Show only leads that have a contact email"
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border transition-colors',
+              hasEmailOnly
+                ? 'bg-[hsl(var(--primary))] text-white border-[hsl(var(--primary))]'
+                : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]'
+            )}
+          >
+            <Mail className="w-4 h-4" /> Has email
+          </button>
           <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 text-sm border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--accent))] transition-colors">
             <Download className="w-4 h-4" /> Export {selected.size > 0 ? `(${selected.size})` : ''}
           </button>

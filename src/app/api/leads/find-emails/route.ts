@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { findEmailForWebsite } from '@/lib/email-finder'
+import { scrapeEmailsForLeads } from '@/lib/email-finder'
 
 export const maxDuration = 60
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const { data: leads, error } = await supabase
       .from('leads')
       .select('id, company_name, website')
-      .is('email', null)
+      .eq('has_contact_email', false)
       .not('website', 'is', null)
       .limit(limit)
 
@@ -27,19 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ scanned: 0, found: 0, message: 'No leads with a website and missing email.' })
     }
 
-    let found = 0
-    for (let i = 0; i < leads.length; i += 5) {
-      const batch = leads.slice(i, i + 5)
-      const results = await Promise.allSettled(
-        batch.map(async (lead: any) => ({ lead, email: await findEmailForWebsite(lead.website) }))
-      )
-      for (const r of results) {
-        if (r.status === 'fulfilled' && r.value.email) {
-          await supabase.from('leads').update({ email: r.value.email }).eq('id', r.value.lead.id)
-          found++
-        }
-      }
-    }
+    const { found } = await scrapeEmailsForLeads(supabase, leads)
 
     return NextResponse.json({ scanned: leads.length, found })
   } catch (err) {

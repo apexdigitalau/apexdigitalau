@@ -2,6 +2,8 @@
 // Checks the homepage and common contact pages for mailto: links
 // and email addresses, then picks the most likely "real" one.
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
 
 const BAD_PATTERNS = [
@@ -77,4 +79,68 @@ export async function findEmailForWebsite(website: string): Promise<string | nul
   }
 
   return cleanCandidates(found, siteDomain)
+}
+
+// How many website lookups we run at once. Each lookup can fire a few slow
+// fetches, so this bounds the outbound load per serverless invocation.
+export const SCRAPE_CONCURRENCY = 25
+
+type ScrapeableLead = { id: string; website?: string | null; company_name?: string | null }
+
+/**
+ * Scrapes contact emails for a batch of freshly-inserted leads and writes any
+ * hits back to the DB (email + has_contact_email = true). Runs in concurrent
+ * waves so it stays fast without opening an unbounded number of connections.
+ *
+ * `maxTotal` caps how many lookups we attempt in a single run (used by the
+ * daily cron to stay inside the 60s serverless budget). Leads beyond the cap
+ * are left untouched — has_contact_email stays false, so the "Find Missing
+ * Emails" button / next run can pick them up — and are logged for review.
+ */
+export async function scrapeEmailsForLeads(
+  supabase: SupabaseClient,
+  leads: ScrapeableLead[],
+  opts: { maxTotal?: number; concurrency?: number } = {}
+): Promise<{ scanned: number; found: number; skipped: number }> {
+  const concurrency = opts.concurrency ?? SCRAPE_CONCURRENCY
+  const withWebsite = leads.filter(
+    (l): l is ScrapeableLead & { website: string } => Boolean(l.website)
+  )
+
+  let toScrape = withWebsite
+  let skipped = 0
+  if (opts.maxTotal != null && withWebsite.length > opts.maxTotal) {
+    toScrape = withWebsite.slice(0, opts.maxTotal)
+    const skippedLeads = withWebsite.slice(opts.maxTotal)
+    skipped = skippedLeads.length
+    console.warn(
+      `[email-scrape] Capped at ${opts.maxTotal} lookups this run; skipped ${skipped} ` +
+      `lead(s) with a website (they keep has_contact_email=false — use "Find Missing ` +
+      `Emails" or the next run to retry): ` +
+      skippedLeads.map((l) => l.company_name || l.id).join(', ')
+    )
+  }
+
+  let found = 0
+  for (let i = 0; i < toScrape.length; i += concurrency) {
+    const batch = toScrape.slice(i, i + concurrency)
+    const results = await Promise.allSettled(
+      batch.map(async (lead) => ({ lead, email: await findEmailForWebsite(lead.website) }))
+    )
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value.email) {
+        const { error } = await supabase
+          .from('leads')
+          .update({ email: r.value.email, has_contact_email: true })
+          .eq('id', r.value.lead.id)
+        if (error) {
+          console.error(`[email-scrape] Failed to save email for ${r.value.lead.id}:`, error.message)
+        } else {
+          found++
+        }
+      }
+    }
+  }
+
+  return { scanned: toScrape.length, found, skipped }
 }

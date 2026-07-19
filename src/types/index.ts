@@ -15,6 +15,7 @@ export interface Lead {
   industry: string | null
   website: string | null
   email: string | null
+  has_contact_email: boolean
   phone: string | null
   address: string | null
   google_rating: number | null

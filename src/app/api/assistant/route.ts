@@ -144,7 +144,7 @@ If the instruction is not about drafting/writing emails to leads, set action to 
     const supabase = getSupabaseAdmin()
     let query = supabase
       .from('leads')
-      .select('id, company_name, industry, website, email, address, google_rating, status')
+      .select('id, company_name, industry, website, email, has_contact_email, address, google_rating, status')
       .limit(count * 3)
 
     if (keyword) {
@@ -212,8 +212,8 @@ If the instruction is not about drafting/writing emails to leads, set action to 
     }
 
     // STEP 2.5 — for leads missing an email, try to find one on their website
-    const withEmail = eligibleLeads.filter((l: any) => l.email)
-    const missingEmail = eligibleLeads.filter((l: any) => !l.email && l.website)
+    const withEmail = eligibleLeads.filter((l: any) => l.has_contact_email)
+    const missingEmail = eligibleLeads.filter((l: any) => !l.has_contact_email && l.website)
 
     let emailsFound = 0
     const toScrape = missingEmail.slice(0, 8) // keep within serverless time limits
@@ -231,8 +231,9 @@ If the instruction is not about drafting/writing emails to leads, set action to 
       for (const r of results) {
         if (r.status === 'fulfilled' && r.value.email) {
           const { lead, email } = r.value
-          await supabase.from('leads').update({ email }).eq('id', lead.id)
+          await supabase.from('leads').update({ email, has_contact_email: true }).eq('id', lead.id)
           lead.email = email
+          lead.has_contact_email = true
           withEmail.push(lead)
           emailsFound++
         }
