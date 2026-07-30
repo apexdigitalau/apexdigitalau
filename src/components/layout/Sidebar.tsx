@@ -8,6 +8,7 @@ import { getSupabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Users,
+  Phone,
   Mail,
   Inbox,
   Globe,
@@ -135,6 +136,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "AI Assistant", href: "/assistant", icon: Sparkles },
   { name: "Leads", href: "/leads", icon: Users },
+  { name: "Call Queue", href: "/calls", icon: Phone },
   { name: "Campaigns", href: "/campaigns", icon: Mail },
   { name: "Inbox", href: "/inbox", icon: Inbox },
   { name: "Website Analysis", href: "/website-analysis", icon: Globe },
