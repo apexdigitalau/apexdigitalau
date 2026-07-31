@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BRAND } from '@/lib/brand'
@@ -21,6 +22,24 @@ type Stage = 'parse' | 'scrape' | 'draft' | 'save'
  * very different payloads and fail for different reasons.
  */
 async function callClaude(stage: Stage, system: string, user: string, maxTokens = 2000) {
+  // TEMPORARY diagnostic for the 401 — reports the shape of the key the running
+  // function actually sees, never the key itself. Remove once resolved.
+  const rawKey = process.env.ANTHROPIC_API_KEY
+  const k = rawKey ?? ''
+  console.log('[KEY_DEBUG] ' + JSON.stringify({
+    stage,
+    defined: rawKey !== undefined,
+    len: k.length,
+    prefix: k.slice(0, 12),
+    suffix: k.slice(-4),
+    quoted: k.startsWith('"') || k.startsWith("'"),
+    newline: /[\r\n]/.test(k),
+    whitespace: k !== k.trim(),
+    nonAscii: /[^\x20-\x7E]/.test(k),
+    sha256_12: createHash('sha256').update(k).digest('hex').slice(0, 12),
+    envKeys: Object.keys(process.env).filter((n) => /ANTHROPIC|CLAUDE/i.test(n)).sort(),
+  }))
+
   let res: Response
   try {
     res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -58,6 +77,7 @@ async function callClaude(stage: Stage, system: string, user: string, maxTokens 
   }
 
   if (!res.ok) {
+    console.log('[KEY_DEBUG] ' + JSON.stringify({ stage, upstreamStatus: res.status, upstreamBody: raw.slice(0, 500) }))
     throw new UpstreamError({
       message: 'The AI service rejected the request',
       stage,
