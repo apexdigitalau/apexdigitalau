@@ -14,14 +14,24 @@ import { TopBar } from '@/components/layout/TopBar'
 import { getSupabase } from '@/lib/supabase'
 import {
   Phone, Globe, Loader2, ChevronDown, ChevronUp, Voicemail, Ban,
-  StickyNote, Star, PhoneCall, CalendarClock, Flame, PartyPopper,
+  StickyNote, Star, PhoneCall, CalendarClock, Flame, PartyPopper, Filter,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Lead } from '@/types'
 
+// Survives reloads so a caller working one industry doesn't have to re-pick it
+// every time the phone locks the screen.
+const INDUSTRY_KEY = 'calls_industry_filter'
+
 type Outcome =
   | 'interested' | 'callback' | 'not_interested'
   | 'meeting_booked' | 'voicemail' | 'wrong_number'
+
+interface IndustryOption {
+  value: string | null
+  label: string
+  count: number
+}
 
 interface CallLog {
   id: string
@@ -79,6 +89,14 @@ export default function CallsPage() {
   const [hotLeads, setHotLeads] = useState<CallLog[]>([])
   const [callbacksDue, setCallbacksDue] = useState<CallLog[]>([])
 
+  // null == "All industries". `filterReady` gates the first claim until the saved
+  // value has been read: localStorage is not available during SSR, so restoring
+  // it in an effect is the only safe option, and claiming before it resolves
+  // would hand out a lead from the wrong industry and immediately replace it.
+  const [industry, setIndustry] = useState<string | null>(null)
+  const [filterReady, setFilterReady] = useState(false)
+  const [industries, setIndustries] = useState<IndustryOption[]>([])
+
   // Keep the current lead id in a ref so the unmount cleanup can release the
   // lock without re-subscribing the effect on every advance.
   const leadIdRef = useRef<string | null>(null)
@@ -132,25 +150,71 @@ export default function CallsPage() {
     loadCounters(); loadHotLeads(); loadCallbacksDue()
   }, [loadCounters, loadHotLeads, loadCallbacksDue])
 
-  // ---- initial load: identify user, claim first lead ---------------------
+  // ---- restore the saved filter, then load the industry list --------------
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(INDUSTRY_KEY)
+      if (saved) setIndustry(saved)
+    } catch {
+      // Private mode / storage disabled — fall back to the unfiltered queue.
+    }
+    setFilterReady(true)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      try {
+        const res = await fetch('/api/leads/industries')
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data?.industries)) setIndustries(data.industries)
+      } catch {
+        // A missing list just means the dropdown stays on "All industries";
+        // it must not block the queue itself.
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // ---- claim: on first load, and again whenever the filter changes --------
+
+  useEffect(() => {
+    if (!filterReady) return
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      // Hand back the outgoing lead rather than leaving it locked for the full
+      // 10 minutes — it may not even be in the newly-selected industry.
+      const previous = leadIdRef.current
+      if (previous) await supabase.rpc('release_lock', { p_lead: previous })
+
       const { data: { user } } = await supabase.auth.getUser()
       if (cancelled) return
       if (!user) { setError('Not signed in.'); setLoading(false); return }
       setUserId(user.id)
-      const { data, error } = await supabase.rpc('claim_next_lead')
+
+      const { data, error } = await supabase.rpc('claim_next_lead', { p_industry: industry })
       if (cancelled) return
       if (error) setError(error.message)
       else setLead((data?.[0] as Lead) ?? null)
       setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [supabase])
+  }, [supabase, filterReady, industry])
 
   useEffect(() => { refreshLists() }, [refreshLists])
+
+  function pickIndustry(value: string | null) {
+    setIndustry(value)
+    try {
+      if (value) window.localStorage.setItem(INDUSTRY_KEY, value)
+      else window.localStorage.removeItem(INDUSTRY_KEY)
+    } catch {
+      // Non-fatal: the filter still applies for this session.
+    }
+  }
 
   // Best-effort lock release when leaving the page. The DB lock also auto-expires
   // after 10 minutes, so this is an optimisation, not a correctness requirement.
@@ -177,6 +241,8 @@ export default function CallsPage() {
       p_outcome: outcome,
       p_notes: note.trim() || null,
       p_callback_at: cbAt ?? null,
+      // Keeps the advance inside the filter the caller is working through.
+      p_industry: industry,
     })
     if (error) {
       setError(error.message)
@@ -191,7 +257,7 @@ export default function CallsPage() {
     setCallbackOpen(false)
     setLogging(false)
     refreshLists()
-  }, [supabase, lead, logging, note, refreshLists])
+  }, [supabase, lead, logging, note, industry, refreshLists])
 
   function handleOutcome(outcome: Outcome) {
     if (outcome === 'callback') { setCallbackOpen(true); return }
@@ -213,6 +279,33 @@ export default function CallsPage() {
         <div className="mx-auto w-full max-w-md space-y-8">
           {/* ================= QUEUE ================= */}
           <section>
+            {/* Industry filter. A native select rather than a pill row: there are
+                ~50 industries, which is far past what pills can show on a phone
+                without burying the lead card below the fold. */}
+            <div className="mb-4">
+              <label htmlFor="industry-filter" className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                <Filter className="w-3.5 h-3.5" /> Industry
+              </label>
+              <div className="relative">
+                <select
+                  id="industry-filter"
+                  value={industry ?? ''}
+                  onChange={e => pickIndustry(e.target.value || null)}
+                  disabled={logging}
+                  className="w-full appearance-none rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3.5 py-3 pr-10 text-sm font-medium text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] disabled:opacity-50"
+                >
+                  {/* Rendered even before the fetch lands so the control is never empty. */}
+                  {industries.length === 0 && <option value="">All industries</option>}
+                  {industries.map(opt => (
+                    <option key={opt.value ?? '__all__'} value={opt.value ?? ''}>
+                      {opt.label} ({opt.count})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+              </div>
+            </div>
+
             {error && (
               <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-sm text-red-400">{error}</p>
@@ -228,7 +321,19 @@ export default function CallsPage() {
               <div className="flex flex-col items-center justify-center py-20 text-center text-[hsl(var(--muted-foreground))]">
                 <PartyPopper className="w-10 h-10 mb-3 opacity-40" />
                 <p className="text-base font-medium text-[hsl(var(--foreground))] mb-1">Queue is empty</p>
-                <p className="text-sm">Every callable lead has been logged. Nice work.</p>
+                {industry ? (
+                  <>
+                    <p className="text-sm">Every callable lead in {industry} has been logged.</p>
+                    <button
+                      onClick={() => pickIndustry(null)}
+                      className="mt-3 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]"
+                    >
+                      Show all industries
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-sm">Every callable lead has been logged. Nice work.</p>
+                )}
               </div>
             ) : (
               <>

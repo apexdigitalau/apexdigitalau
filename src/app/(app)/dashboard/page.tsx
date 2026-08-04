@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar'
 import { StatCard } from '@/components/dashboard/StatCard'
 import {
   Users, Mail, MessageSquare, Calendar, DollarSign,
-  RefreshCw, ArrowRight, Clock, Send, UserPlus
+  RefreshCw, ArrowRight, Clock, Send, UserPlus, PhoneCall
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -106,9 +106,37 @@ function followUpLabel(date: string): string {
   return date < today ? 'Overdue' : formatDate(date)
 }
 
+// Team calls leaderboard. Order here is the order the chips render in — the two
+// outcomes worth celebrating first, then the rest.
+const CALL_OUTCOMES = [
+  { key: 'meeting_booked', label: 'Booked', className: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+  { key: 'interested', label: 'Interested', className: 'bg-green-500/15 text-green-600 dark:text-green-400' },
+  { key: 'callback', label: 'Callback', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  { key: 'not_interested', label: 'Not interested', className: 'bg-red-500/15 text-red-600 dark:text-red-400' },
+  { key: 'voicemail', label: 'Voicemail', className: 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]' },
+  { key: 'wrong_number', label: 'Wrong number', className: 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]' },
+] as const
+
+interface CallLeaderboardRow {
+  user_id: string | null
+  email: string | null
+  name: string | null
+  total: number
+  outcomes: Record<string, number>
+}
+
+// "tomas@apexdigitalau.com" -> "tomas" when there's no full_name to show.
+function callerLabel(row: CallLeaderboardRow): string {
+  if (row.name?.trim()) return row.name
+  if (row.email) return row.email
+  return 'Unknown caller'
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [statsLoading, setStatsLoading] = useState(true)
+  const [callRows, setCallRows] = useState<CallLeaderboardRow[]>([])
+  const [callsLoading, setCallsLoading] = useState(true)
 
   async function fetchStats() {
     setStatsLoading(true)
@@ -123,7 +151,25 @@ export default function DashboardPage() {
     }
   }
 
-  useEffect(() => { fetchStats() }, [])
+  async function fetchCalls() {
+    setCallsLoading(true)
+    try {
+      const res = await fetch('/api/analytics/calls')
+      const data = await res.json()
+      setCallRows(Array.isArray(data?.leaderboard) ? data.leaderboard : [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setCallsLoading(false)
+    }
+  }
+
+  function refreshAll() {
+    fetchStats()
+    fetchCalls()
+  }
+
+  useEffect(() => { refreshAll() }, [])
 
   const emailActivity = stats?.email_activity ?? []
   const revenueSeries = stats?.revenue_series ?? []
@@ -139,7 +185,7 @@ export default function DashboardPage() {
         title="Dashboard"
         subtitle={`${new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}`}
         actions={
-          <button onClick={fetchStats} className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
+          <button onClick={refreshAll} className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
           </button>
@@ -373,6 +419,69 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Team calls today */}
+        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Team calls today</h3>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">Sydney time · resets at midnight</p>
+            </div>
+            <Link href="/calls" className="flex items-center gap-1 text-xs text-[hsl(var(--primary))] hover:underline">
+              Call queue <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {callsLoading ? (
+            <p className="text-xs text-[hsl(var(--muted-foreground))] py-6 text-center">Loading…</p>
+          ) : callRows.length === 0 ? (
+            <p className="text-xs text-[hsl(var(--muted-foreground))] py-6 text-center">
+              No calls logged today yet.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {callRows.map(row => (
+                <div
+                  key={row.user_id ?? 'unattributed'}
+                  className="flex flex-col gap-2.5 rounded-lg border border-[hsl(var(--border))] p-3 sm:flex-row sm:items-center sm:gap-4"
+                >
+                  <div className="flex items-center gap-3 min-w-0 sm:w-56 sm:shrink-0">
+                    <div className="w-8 h-8 shrink-0 rounded-lg bg-[hsl(var(--muted))] flex items-center justify-center">
+                      <PhoneCall className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">
+                        {callerLabel(row)}
+                      </p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        {row.total} {row.total === 1 ? 'call' : 'calls'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* All six outcomes always render, so a row's shape is comparable
+                      down the column; zeros are dimmed rather than hidden. */}
+                  <div className="flex flex-wrap gap-1.5 sm:justify-end sm:flex-1">
+                    {CALL_OUTCOMES.map(o => {
+                      const n = row.outcomes?.[o.key] ?? 0
+                      return (
+                        <span
+                          key={o.key}
+                          title={o.label}
+                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                            n > 0 ? o.className : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] opacity-50'
+                          }`}
+                        >
+                          {o.label} {n}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
