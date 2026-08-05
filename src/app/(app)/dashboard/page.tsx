@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Link from 'next/link'
+import { UpcomingSubscriptions } from '@/components/dashboard/UpcomingSubscriptions'
 
 const statusColors: Record<string, string> = {
   new: "bg-slate-500/20 text-slate-400",
@@ -249,6 +250,9 @@ export default function DashboardPage() {
             loading={statsLoading}
           />
         </div>
+
+        {/* Owner-only — renders nothing for everyone else */}
+        <UpcomingSubscriptions />
 
         {/* Rate Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">

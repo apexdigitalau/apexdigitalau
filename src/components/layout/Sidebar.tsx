@@ -23,9 +23,11 @@ import {
   Sparkles,
   LogOut,
   Loader2,
+  DollarSign,
   X,
 } from "lucide-react";
 import { useTheme } from "@/components/common/ThemeProvider";
+import { useIsOwner } from "@/lib/use-is-owner";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useSidebar } from "@/components/layout/AppShell";
@@ -132,7 +134,12 @@ function AdminMenu() {
   );
 }
 
-const navigation = [
+const navigation: {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  ownerOnly?: boolean;
+}[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "AI Assistant", href: "/assistant", icon: Sparkles },
   { name: "Leads", href: "/leads", icon: Users },
@@ -141,6 +148,9 @@ const navigation = [
   { name: "Inbox", href: "/inbox", icon: Inbox },
   { name: "Website Analysis", href: "/website-analysis", icon: Globe },
   { name: "Clients", href: "/clients", icon: Briefcase },
+  // Owners only. Hiding the link is cosmetic — /expenses and its API routes
+  // gate server side, and RLS gates below both.
+  { name: "Expenses", href: "/expenses", icon: DollarSign, ownerOnly: true },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Deploy Guide", href: "/deploy-guide", icon: BookOpen },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -149,6 +159,10 @@ const navigation = [
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [notifCount] = useState(3);
+  const isOwner = useIsOwner();
+  // isOwner is null until the session resolves; requiring `=== true` keeps the
+  // link from flashing in for a frame before it's known.
+  const items = navigation.filter((item) => !item.ownerOnly || isOwner === true);
 
   return (
     <>
@@ -185,7 +199,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-        {navigation.map((item) => {
+        {items.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
